@@ -6,19 +6,19 @@ struct SysPage_FileHeader {
 class SysPage_FileHandle
 {
 public:
-   SysPage_FileHandler();
+   SysPage_FileHandle();
    ~SysPage_FileHandle();
 
-   ErrCo getFirstPage();
-   ErrCo getNextPage();
-   ErrCo getThisPage();
-   ErrCo getLastPage();
-   ErrCo getPreviousPage();
+   ErrCode getFirstPage(SysPage_PageHandle &pageHandle);
+   ErrCode getNextPage(int pageNum, SysPage_PageHandle &pageHandle);
+   ErrCode getThisPage(int pageNum, SysPage_PageHandle &pageHandle);
+   ErrCode getLastPage(SysPage_PageHandle &pageHandle);
+   ErrCode getPreviousPage(int pageNum, SysPage_PageHandle &pageHandle);
 
-   ErrCo allocatePage();
-   ErrCo disposePage();
-   ErrCo markDirty();
-   ErrCo forcePage();
+   ErrCode allocatePage(SysPage_PageHandle &pageHandle);
+   ErrCode disposePage(int pageNum);
+   ErrCode markDirty(int pageNum);
+   ErrCode unpinPage(int pageNum);
 
 private:
    SysPage_BufferManager* bfrmgr;

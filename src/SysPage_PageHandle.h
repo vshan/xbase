@@ -4,8 +4,8 @@ public:
    SysPage_PageHandle();
    ~SysPage_PageHandle();
 
-   ErrCo getData();
-   ErrCo getPageNum();
+   ErrCode getData(char *&pData);
+   ErrCode getPageNum(int &pageNum);
 private:
    int pageNumber;
    char *pageData;
