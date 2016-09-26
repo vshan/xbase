@@ -6,14 +6,14 @@ struct SysPage_FileHeader {
 class SysPage_FileHandle
 {
 public:
-	SysPage_FileHandler();
-	~SysPage_FileHandle();
+   SysPage_FileHandler();
+   ~SysPage_FileHandle();
 
-	ErrCo getFirstPage();
-	ErrCo getNextPage();
-	ErrCo getThisPage();
-	ErrCo getLastPage();
-	ErrCo getPreviousPage();
+   ErrCo getFirstPage();
+   ErrCo getNextPage();
+   ErrCo getThisPage();
+   ErrCo getLastPage();
+   ErrCo getPreviousPage();
 
    ErrCo allocatePage();
    ErrCo disposePage();
