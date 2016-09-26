@@ -4,15 +4,10 @@ public:
 	SysPage_BufferManager();
 	~SysPage_BufferManager();
 
-	ErrCode getPage();
-	ErrCode allocatePage();
-	ErrCode markDirty();
-	ErrCode allocateBlock();
-	ErrCode disposeBlock();
+	ErrCo getPage();
+	ErrCo allocatePage();
+	ErrCo markDirty();
+	ErrCo allocateBlock();
+	ErrCo disposeBlock();
 	
 };
-
-ErrCode SysPage_BufferManager::getPage()
-{
-	
-}
