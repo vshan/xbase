@@ -6,7 +6,7 @@ struct SysPage_BufPageDesc {
    int pinCount;
    int pageNum;
    int fd;
-}
+};
 
 class SysPage_BufferManager
 {
