@@ -96,7 +96,7 @@ ErrCode SysPage_BufferManager::unpinPage(int fd, int pageNum)
    if (it != slot_map.end()) {
       slot = it->second;
 
-      if (bufTable[slot].pinCount > 0) 
+      if (bufTable[slot].pinCount > 0)
          bufTable[slot].pinCount--;
 
       if (bufTable[slot].pinCount == 0) {
