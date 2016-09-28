@@ -18,6 +18,15 @@ enum AttrType {
    STRING
 };
 
+typedef int ErrCode;
+
+#define START_SYSPAGE_ERR  (-1)
+#define END_SYSPAGE_ERR    (-100)
+
+#define START_SYSPAGE_WARN  1
+#define END_SYSPAGE_WARN    100
+
+
 //
 // TRUE, FALSE and BOOLEAN
 //
