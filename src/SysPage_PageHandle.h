@@ -1,5 +1,6 @@
 class SysPage_PageHandle
 {
+  friend class SysPage_FileHandle;
 public:
    SysPage_PageHandle();
    ~SysPage_PageHandle();

@@ -5,6 +5,7 @@ struct SysPage_FileHeader {
 
 class SysPage_FileHandle
 {
+  friend class SysPage_Manager;
 public:
    SysPage_FileHandle();
    ~SysPage_FileHandle();
