@@ -129,4 +129,54 @@ ErrCode SysPage_BufferManager::disposeBlock(char *buffer)
    return (ec = 0);
 }
 
-ErrCode
+ErrCode SysPage_BufferManager::flushPages(int fd)
+{
+   ErrCode ec;
+   int slot;
+   map<pair<int, int>, int>::iterator it;
+   slot = first;
+   while (slot != INVALID_SLOT) {
+      int next = bufTable[slot].next;
+
+      if (bufTable[slot].fd == fd) {
+
+         if (bufTable[slot].pinCount == 0) {
+            // todo
+         }
+
+         if (bufTable[slot].isDirty == TRUE) {
+            writePage(fd, bufTable[slot].pageNum, bufTable[slot].pData);
+            bufTable[slot].isDirty = FALSE;
+         }
+
+         it = slot_map.find(make_pair(fd, bufTable[slot].pageNum));
+         if (it != slot_map.end())
+            slot_map.erase(p);
+         unlink(slot);
+         insertFree(slot);
+      }
+      slot = next;
+   }
+   return (ec = 0);
+}
+
+ErrCode SysPage_BufferManager::forcePage(int fd, int pageNum)
+{
+   ErrCode ec;
+   int slot;
+   map<pair<int, int>, int>::iterator it;
+   pair<int, int> p = make_pair(fd, pageNum);
+
+   it = slot_map.find(p);
+
+   if (it != slot_map.end()) {
+      slot = it->second;
+
+      if (bufTable[slot].isDirty == TRUE) {
+         writePage(fd, bufTable[slot].pageNum, bufTable[slot].pData);
+         bufTable[slot].isDirty = FALSE;
+      }
+   }
+
+   return (ec = 0);
+ }

@@ -25,7 +25,7 @@ public:
    ErrCode disposeBlock(char *buffer);
    ErrCode flushPages(int fd);
    // Force a page, but do not remove from buffer
-   ErrCode forcePages(int fd, int pageNum);
+   ErrCode forcePage(int fd, int pageNum);
    ErrCode clearBuffer();
 
 private:
