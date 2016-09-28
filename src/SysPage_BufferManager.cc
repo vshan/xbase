@@ -96,7 +96,7 @@ ErrCode SysPage_BufferManager::unpinPage(int fd, int pageNum)
    if (it != slot_map.end()) {
       slot = it->second;
 
-      if (bufTable[slot].pinCount > 0)
+      if (bufTable[slot].pinCount > 0) 
          bufTable[slot].pinCount--;
 
       if (bufTable[slot].pinCount == 0) {
@@ -179,4 +179,113 @@ ErrCode SysPage_BufferManager::forcePage(int fd, int pageNum)
    }
 
    return (ec = 0);
- }
+}
+
+ErrCode SysPage_BufferManager::linkHead(int slot)
+{
+   // Set next and prev pointers of slot entry
+   bufTable[slot].next = first;
+   bufTable[slot].prev = INVALID_SLOT;
+
+   // If list isn't empty, point old first back to slot
+   if (first != INVALID_SLOT)
+      bufTable[first].prev = slot;
+
+   first = slot;
+
+   // if list was empty, set last to slot
+   if (last == INVALID_SLOT)
+      last = first;
+
+   // Return ok
+   return (0);
+}
+
+ErrCode SysPage_BufferManager::unlink(int slot)
+{
+   // If slot is at head of list, set first to next element
+   if (first == slot)
+      first = bufTable[slot].next;
+
+   // If slot is at end of list, set last to previous element
+   if (last == slot)
+      last = bufTable[slot].prev;
+
+   // If slot not at end of list, point next back to previous
+   if (bufTable[slot].next != INVALID_SLOT)
+      bufTable[bufTable[slot].next].prev = bufTable[slot].prev;
+
+   // If slot not at head of list, point prev forward to next
+   if (bufTable[slot].prev != INVALID_SLOT)
+      bufTable[bufTable[slot].prev].next = bufTable[slot].next;
+
+   // Set next and prev pointers of slot entry
+   bufTable[slot].prev = bufTable[slot].next = INVALID_SLOT;
+
+   // Return ok
+   return (0);
+}
+
+ErrCode SysPage_BufferManager::internalAlloc(int &slot)
+{
+   ErrCode ec;
+   map<pair<int, int>, int>::iterator it;
+
+   if (free != INVALID_SLOT) {
+      slot = free;
+      free = bufTable[slot].next;
+   }
+
+   for (slot = last; last != INVALID_SLOT; slot = bufTable[slot].prev) {
+      if (bufTable[slot].pinCount == 0)
+         break;
+   }
+
+   if (bufTable[slot].isDirty == TRUE) {
+      writePage(bufTable[slot].fd, bufTable[slot].pageNum, bufTable[slot].pData);
+      bufTable[slot].isDirty = FALSE;
+   }
+
+   pair<int, int> p = make_pair(bufTable[slot].fd, bufTable[slot].pageNum);
+
+   it = slot_map.find(p);
+
+   if (it != slot_map.end()) {
+      slot_map.erase(p);
+   }
+
+   unlink(slot);
+   headLink(slot);
+
+   return (ec = 0);
+}
+
+ErrCode SysPage_BufferManager::writePage(int fd, int pageNum, char *source)
+{
+   ErrCode ec;
+   long offset = pageNum*pageSize + SYSPAGE_FILE_HDR_SIZE;
+   lseek(fd, offset, L_SET);
+   write(fd, source, pageSize);
+
+   return (ec = 0);
+}
+
+ErrCode SysPage_BufferManager::readPage(int fd, int pageNum, char *dest)
+{
+   ErrCode ec;
+   long offset = pageNum*pageSize + SYSPAGE_FILE_HDR_SIZE;
+   lseek(fd, offset, L_SET);
+   read(fd, source, pageSize);
+
+   return (ec = 0);
+}
+
+ErrCode SysPage_BufferManager::initPageDesc(int fd, int pageNum, int slot)
+{
+   bufTable[slot].fd       = fd;
+   bufTable[slot].pageNum  = pageNum;
+   bufTable[slot].bDirty   = FALSE;
+   bufTable[slot].pinCount = 1;
+
+   return 0;
+}
