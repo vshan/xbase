@@ -18,6 +18,8 @@ enum AttrType {
    STRING
 };
 
+#define START_SYSPAGE_WARN 1
+
 //
 // TRUE, FALSE and BOOLEAN
 //
