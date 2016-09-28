@@ -1,3 +1,6 @@
+#define MEMORY_FD -1
+#define MEMORY_PAGENUM 1
+
 struct SysPage_BufPageDesc {
    char *pData;
    int next;
