@@ -1,6 +1,7 @@
+// Header structure for files
 struct SysPage_FileHeader {
-   int firstFree;
-   int numPages;
+   int firstFree; // first free page in the linked list
+   int numPages;  // No of pages in the file
 };
 
 class SysPage_FileHandle
