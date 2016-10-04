@@ -5,6 +5,13 @@
 #define XBASE_H
 
 #include <iostream>
+#include<cstdio>
+#include<cstring>
+#include<cerrno>
+#include<cmap>
+#include<cassert>
+#include<fcntl>
+#include<unistd.h>
 
 #define MAXNAME 24          // maximum length of relation
                             // name or attribute name

@@ -1,3 +1,5 @@
+#include "SysPage_Internal.h"
+
 #define MEMORY_FD -1
 #define MEMORY_PAGENUM 1
 

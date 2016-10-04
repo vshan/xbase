@@ -1,9 +1,7 @@
-#include <cmath>
-#include <cstring>
-#include <cassert>
-
 #ifndef Record_BitMap
 #define Record_BitMap
+
+#include "Record_Internal.h"
 
 class bitmap {
 public:

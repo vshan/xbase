@@ -1,3 +1,4 @@
+#include "SysPage_Internal.h"
 // Header structure for files
 struct SysPage_FileHeader {
    int firstFree; // first free page in the linked list

@@ -1,5 +1,6 @@
 #include "bitmap.h"
 
+using namespace std;
 
 bitmap::bitmap(int numBits): size(numBits)
 {

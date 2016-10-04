@@ -1,5 +1,6 @@
-#include "SysPage_Internal.h"
 #include "SysPage_PageHandle.h"
+
+using namespace std;
 
 #define INVALID_PAGE   (-1)
 

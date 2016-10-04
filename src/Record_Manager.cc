@@ -1,7 +1,6 @@
-
-#include<fcntl>
-
 #include "Record_Manager.h"
+
+using namespace std;
 
 // Constructor
 Record_Manager::Record_Manager(SysPage_Manager &sysPageManager)

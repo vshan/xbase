@@ -1,6 +1,8 @@
 #ifndef RECORD_MANAGER_H
 #define RECORD_MANAGER_H
 
+#include "Record_Internal.h"
+
 class Record_Manager {
 public:
     Record_Manager(SysPage_Manager &sys);

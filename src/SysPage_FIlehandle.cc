@@ -1,7 +1,6 @@
 #include "SysPage_FileHandle.h"
-#include "SysPage_Internal.h"
-#include "iostream"
 
+using namespace std;
 
 SysPage_FileHandle::SysPage_FileHandle()
 {

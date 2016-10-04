@@ -1,9 +1,7 @@
-#include<cstdio>
-#include<fcntl>
-#include<unistd.h>
-
-#include "SYSPAGE_internal.h"
 #include "SysPage_FileHandle.h"
+#include "SysPage_Manager.h"
+
+using namespace std;
 
 // Constructor
 SysPage_Manager::SysPage_Manager()

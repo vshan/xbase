@@ -1,5 +1,7 @@
 /* Implementation file of SysPage, BufferManager component */
+#include "SysPage_BufferManager.h"
 
+using namespace std;
 
 SysPage_BufferManager::SysPage_BufferManager(int numPages)
 {
@@ -96,7 +98,7 @@ ErrCode SysPage_BufferManager::unpinPage(int fd, int pageNum)
    if (it != slot_map.end()) {
       slot = it->second;
 
-      if (bufTable[slot].pinCount > 0) 
+      if (bufTable[slot].pinCount > 0)
          bufTable[slot].pinCount--;
 
       if (bufTable[slot].pinCount == 0) {
