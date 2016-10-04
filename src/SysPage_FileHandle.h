@@ -20,9 +20,9 @@ public:
    ErrCode markDirty(int pageNum);
    ErrCode unpinPage(int pageNum);
    ErrCode isValidPageNum(int pageNum);
-   
+
 private:
-   SysPage_BufferManager* bfrmgr;
+   SysPage_BufferManager* bufferMgr;
    SysPage_FileHeader hdr;
    int unixfd;
    int isFileOpen;
