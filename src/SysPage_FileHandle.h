@@ -15,13 +15,13 @@ public:
    ErrCode getNextPage(int pageNum, SysPage_PageHandle &pageHandle);
    ErrCode getThisPage(int pageNum, SysPage_PageHandle &pageHandle);
    ErrCode getLastPage(SysPage_PageHandle &pageHandle);
-   ErrCode getPreviousPage(int pageNum, SysPage_PageHandle &pageHandle);
 
    ErrCode allocatePage(SysPage_PageHandle &pageHandle);
    ErrCode disposePage(int pageNum);
    ErrCode markDirty(int pageNum);
    ErrCode unpinPage(int pageNum);
-
+   ErrCode isValidPageNum(int pageNum);
+   
 private:
    SysPage_BufferManager* bfrmgr;
    SysPage_FileHeader hdr;
