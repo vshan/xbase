@@ -14,7 +14,7 @@ bitmap::bitmap(char * buf, int numBits): size(numBits)
   memcpy(buffer, buf, this->numChars());
 }
 
-int bitmap::to_char_buf(char * b, int len) const 
+int bitmap::to_char_buf(char * b, int len) const
 {
   assert(b != NULL && len == this->numChars());
   memcpy((void*)b, buffer, len);
