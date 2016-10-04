@@ -20,14 +20,21 @@ enum AttrType {
 
 typedef int ErrCode;
 
-#define START_SYSPAGE_ERR  (-1)
-#define END_SYSPAGE_ERR    (-100)
-
 #define START_SYSPAGE_WARN  1
 #define END_SYSPAGE_WARN    100
 #define START_RECORD_WARN   101
 #define END_RECORD_WARN     200
 
+#define START_SYSPAGE_ERR  (-1)
+#define END_SYSPAGE_ERR    (-100)
+#define START_RECORD_ERR  (-101)
+#define END_RECORD_ERR    (-200)
+#define START_IX_ERR  (-201)
+#define END_IX_ERR    (-300)
+#define START_SM_ERR  (-301)
+#define END_SM_ERR    (-400)
+#define START_QL_ERR  (-401)
+#define END_QL_ERR    (-500)
 
 //
 // TRUE, FALSE and BOOLEAN
