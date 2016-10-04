@@ -5,7 +5,7 @@
 
 class Record_Manager {
 public:
-    Record_Manager(SysPage_Manager &sys);
+    Record_Manager(SysPage_Manager &spm);
     ~Record_Manager();
 
     ErrCode createFile(const char *fileName, int recordSize);
