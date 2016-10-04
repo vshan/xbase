@@ -18,6 +18,40 @@ struct Record_PageHdr {
   char * freeSlotMap; // A bitmap that tracks the free slots within the page
   int numSlots;
   int numFreeSlots;
+
+  Record_PageHdr(int numSlots) : numSlots(numSlots), numFreeSlots(numSlots)
+      { freeSlotMap = new char[this->mapsize()];}
+
+  ~Record_PageHdr()
+      { delete [] freeSlotMap; }
+
+  int size() const
+      { return sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots)
+          + bitmap(numSlots).numChars()*sizeof(char); }
+  int mapsize() const
+      { return this->size() - sizeof(nextFree)
+          - sizeof(numSlots) - sizeof(numFreeSlots);}
+  int to_buf(char *& buf) const
+      {
+        memcpy(buf, &nextFree, sizeof(nextFree));
+        memcpy(buf + sizeof(nextFree), &numSlots, sizeof(numSlots));
+        memcpy(buf + sizeof(nextFree) + sizeof(numSlots),
+               &numFreeSlots, sizeof(numFreeSlots));
+        memcpy(buf + sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots),
+               freeSlotMap, this->mapsize()*sizeof(char));
+        return 0;
+      }
+  int from_buf(const char * buf)
+      {
+        memcpy(&nextFree, buf, sizeof(nextFree));
+        memcpy(&numSlots, buf + sizeof(nextFree), sizeof(numSlots));
+        memcpy(&numFreeSlots, buf + sizeof(nextFree) + sizeof(numSlots),
+               sizeof(numFreeSlots));
+        memcpy(freeSlotMap,
+               buf + sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots),
+               this->mapsize()*sizeof(char));
+        return 0;
+      }
 };
 
 #define RECORD_PAGE_LIST_END   -1       // end of list of free pages

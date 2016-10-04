@@ -1,7 +1,10 @@
+#include "xbase.h"
+
 #ifndef SYSPAGE_INTERNHAL_H
 #define SYSPAGE_INTERNHAL_H
 
 #include <cstring>
+
 
 const int SYSPAGE_BUFFER_SIZE = 40;
 
