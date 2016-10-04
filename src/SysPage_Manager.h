@@ -1,3 +1,5 @@
+#include "SysPage_Internal.h"
+
 class SysPage_Manager
 {
 public:

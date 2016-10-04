@@ -40,4 +40,11 @@ const int SYSPAGE_FILE_HDR_SIZE = SYSPAGE_PAGE_SIZE + sizeof(SysPage_PageHeader)
 #define SYSPAGE_UNIX            (START_SYSPAGE_ERR - 10) // Unix error
 #define SYSPAGE_LASTERROR       SYSPAGE_UNIX
 
+// Printing of the errors
+void SysPage_printError(int ec)
+{
+
+
+}
+
 #endif
