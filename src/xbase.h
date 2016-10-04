@@ -25,6 +25,17 @@ enum AttrType {
    STRING
 };
 
+enum CompOp {
+	NO_OP,
+	EQ_OP, NE_OP, GE_OP, GT_OP, LT_OP, LE_OP
+};
+
+enum AggFun {
+	NO_F,
+	MIN_F, MAX_F, COUNT_F,
+	SUM_F, AVG_F
+};
+
 typedef int ErrCode;
 
 #define START_SYSPAGE_WARN  1
