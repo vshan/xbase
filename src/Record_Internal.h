@@ -1,3 +1,6 @@
+#ifndef RECORD_INTERNAL_H
+#define RECORD_INTERNAL_H
+
 #include "xbase.h"
 #include "SysPage_Internal.h"
 
@@ -19,3 +22,22 @@ struct Record_PageHdr {
 
 #define RECORD_PAGE_LIST_END   -1       // end of list of free pages
 #define RECORD_PAGE_FULLY_USED -2       // page is fully used with no free slots
+
+#define RM_BADRECSIZE      (START_RM_WARN + 0)  // rec size invalid <= 0
+#define RM_NORECATRID      (START_RM_WARN + 1)  // This rid has no record
+
+#define RM_LASTWARN RM_NORECATRID
+
+#define RM_SIZETOOBIG      (START_RM_ERR - 0)  // record size too big
+#define RM_PF              (START_RM_ERR - 1)  // error in PF
+#define RM_NULLRECORD      (START_RM_ERR - 2)
+#define RM_RECSIZEMISMATCH (START_RM_ERR - 3)  // record size mismatch
+#define RM_HANDLEOPEN      (START_RM_ERR - 4)
+#define RM_FCREATEFAIL     (START_RM_ERR - 5)
+#define RM_FNOTOPEN        (START_RM_ERR - 6)
+#define RM_BAD_RID         (START_RM_ERR - 7)
+#define RM_EOF             (START_RM_ERR - 8)  // end of file
+
+#define RM_LASTERROR RM_EOF
+
+#endif

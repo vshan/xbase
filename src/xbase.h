@@ -25,6 +25,8 @@ typedef int ErrCode;
 
 #define START_SYSPAGE_WARN  1
 #define END_SYSPAGE_WARN    100
+#define START_RECORD_WARN   101
+#define END_RECORD_WARN     200
 
 
 //

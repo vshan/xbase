@@ -113,13 +113,14 @@ ErrCode SysPage_Manager::openFile(char* fileName, SysPage_FileHandle &fileHandle
 
     // Open the file
     if((fileHandle.unixfd = open(fileName,
-                ))<0)
+        O_BINARY | O_RDWR ))<0)
     {
         return SYSPAGE_UNIX;
     }
 
+    // syntax of read :
     // Read the file header
-    int numBytes = read(fileHandle.unixfd, ,sizeof(SysPage_FileHeader));
+    int numBytes = read(fileHandle.unixfd, (char *)&fileHandle.hdr,sizeof(SysPage_FileHeader));
 
     if(numBytes!=sizeof(SysPage_FileHeader))
     {
