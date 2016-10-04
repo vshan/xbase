@@ -4,7 +4,7 @@
 #ifndef XBASE_H
 #define XBASE_H
 
-#include <iostream>
+#include<iostream>
 #include<cstdio>
 #include<cstring>
 #include<cerrno>
