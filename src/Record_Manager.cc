@@ -43,6 +43,10 @@ ErrCode Record_Manager::createFile(const char *fileName, int recordSize)
         return rc;
     }
 
+    SysPage_PageHandle spph;
+    char *data;
+
+
 
 
 
