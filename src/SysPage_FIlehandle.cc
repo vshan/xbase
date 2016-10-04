@@ -2,34 +2,35 @@
 
 using namespace std;
 
-SysPage_FileHandle::SysPage_FileHandle()
+SysPage_FileHandle::SysPage_FileHandle() // Default Constructor
 {
   //Set local variables
   isFileOpen = FALSE;
   bufferMgr = NULL;
 }
-~SysPage_FileHandle()
+~SysPage_FileHandle() // Default Destructor
 {
 
 }
 
-ErrCode SysPage_PageHandle::getFirstPage(SysPage_PageHandle &pageHandle)
+ErrCode SysPage_PageHandle::getFirstPage(SysPage_PageHandle &pageHandle) // Get the first page of the file
 {
-  // Get next page from the 0th page
+  // Get next page from the (-1)th page i.e get the 0th indexed page
   return (getNextPage((int)-1),pageHandle);
 }
 
-ErrCode SysPage_PageHandle::getLastPage(SysPage_PageHandle &pageHandle)
+ErrCode SysPage_PageHandle::getLastPage(SysPage_PageHandle &pageHandle) // Get the last page of the file
 {
   //get previous page from last + 1 page
   return (getPreviousPage((int)hdr.numPages,pageHandle))
 }
 
-ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHandle)
+ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHandle) // Get the succeeding page to the
+                                                                                     // given page number
 {
   int ec    // error code
 
-  // Check if file open
+  // Check if file is open
   if(!isFileOpen)
     return (SYSPAGE_CLOSEDFILE);
 
@@ -52,14 +53,17 @@ ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHan
 
 ErrCode SysPage_PageHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pageHandle)
 {
-  int ec
+  int ec  // Error code
 
+  // Check if file is open
   if(!isFileOpen)
     return (SYSPAGE_CLOSEDFILE);
 
+  // Check if page is valid
   if(pageNum != -1 && (!isValidPageNum(pageNum)))
     return (SYSPAGE_INVALIDPAGE);
 
+  // Iterate in reverse manner till you get a free page
   for (pageNum--; pageNum >= 0; pageNum--)
   {
     if(!(ec = getThisPage(pageNum,pageHandle)))
@@ -74,7 +78,7 @@ ErrCode SysPage_PageHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pag
 
 ErrCode SysPage_PageHandle::getThisPage(int pageNum, SysPage_PageHandle &pageHandle)
 {
-  int  ec;               // return code
+  int  ec;              // error code
   char *pageBuf;        // address of page in buffer pool
 
   if (!isFileOpen)

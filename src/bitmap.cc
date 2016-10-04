@@ -6,7 +6,7 @@ bitmap::bitmap(int numBits): size(numBits)
 {
   buffer = new char[this->numChars()];
   memset((void*)buffer, 0, this->numChars());
-  this->reset(); // So the buffer has a cean slate
+  this->reset(); // So the buffer has a clean slate
 }
 
 bitmap::bitmap(char * buf, int numBits): size(numBits)

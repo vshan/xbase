@@ -44,4 +44,12 @@ const int SYSPAGE_FILE_HDR_SIZE = SYSPAGE_PAGE_SIZE + sizeof(SysPage_PageHeader)
 #define SYSPAGE_PAGE_LIST_END  -1       // end of list of free pages
 #define SYSPAGE_PAGE_USED      -2       // page is being used
 
+// Printing of the errors
+void SysPage_printError(int ec)
+{
+
+
+}
+
+
 #endif
