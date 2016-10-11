@@ -1,3 +1,6 @@
+#ifndef RECORD_FILEHANDLE_H
+#define RECORD_FILEHANDLE_H
+
 class Record_FileHandle {
 public:
 	Record_FileHandle();
@@ -33,3 +36,5 @@ private:
     bool isFileOpen;
     bool isHdrChanged;
 };
+
+#endif
