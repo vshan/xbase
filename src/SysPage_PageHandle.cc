@@ -4,17 +4,6 @@ using namespace std;
 
 #define INVALID_PAGE   (-1)
 
-//
-// SysPage_PageHandle
-//
-// Desc: Default constructor for a page handle object
-//       A page handle object provides access to the contents of a page
-//       and the page's page number.  The page handle object is constructed
-//       here but it must be passed to one of the SysPage_FileHandle methods to
-//       have it refer to a pinned page before it can be used to access the
-//       contents of a page.  Remember to call SysPage_FileHandle::UnpinPage()
-//       to unpin the page when you are finished accessing it.
-//
 SysPage_PageHandle::SysPage_PageHandle()
 {
   pageNumber = INVALID_PAGE
@@ -67,7 +56,7 @@ ErrCode SysPage_PageHandle::getPageNum(int &pageNum)
   if(pageData == NULL)
     return SYSPAGE_PAGEUNPINNED;
 
-  pageNum = pageNumber
+  pageNum = pageNumber;
 
   return 0;
 }
