@@ -8,9 +8,9 @@
 #include<cstdio>
 #include<cstring>
 #include<cerrno>
-#include<cmap>
+#include<map>
 #include<cassert>
-#include<fcntl>
+#include<fcntl.h>
 #include<unistd.h>
 
 #define MAXNAME 24          // maximum length of relation
