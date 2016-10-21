@@ -179,13 +179,19 @@ ErrCode SysPage_BufferManager::flushPages(int fd)
             slot_map.erase(p);
 
          unlink(slot);
-         insertFree(slot);
+         insertAtHead(slot);
       }
       slot = next;
    }
    return (ec = 0);
 }
 
+/*
+    If a page is dirty then force the page from the buffer pool onto disk.
+    The page will not be forced out of the buffer pool.
+    The page number, a default value of ALL_PAGES will be used if
+    the client doesn't provide a value. This will force all pages.
+*/
 ErrCode SysPage_BufferManager::forcePage(int fd, int pageNum)
 {
    ErrCode ec;
@@ -201,8 +207,8 @@ ErrCode SysPage_BufferManager::forcePage(int fd, int pageNum)
       if (bufTable[slot].isDirty == TRUE) {
          if((ec = writePage(fd, bufTable[slot].pageNum,
              bufTable[slot].pData)))
-                return ec;
-                
+                return rc;
+
          bufTable[slot].isDirty = FALSE;
       }
    }
@@ -210,6 +216,14 @@ ErrCode SysPage_BufferManager::forcePage(int fd, int pageNum)
    return (ec = 0);
 }
 
+// Insert a slot at the head of the free list
+ErrCode SysPage_BufferManager::insertAtHead(int slot)
+{
+    bufTable[slot].next = free;
+    free = slot;
+
+    return (ec=0);
+}
 /*
     insert a slot at the head of the list, making it the most recently used slot
 */

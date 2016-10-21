@@ -6,8 +6,8 @@ using namespace std;
 
 SysPage_PageHandle::SysPage_PageHandle()
 {
-  pageNumber = INVALID_PAGE
-  pageData = NULL
+  pageNumber = INVALID_PAGE;
+  pageData = NULL;
 }
 
 SysPage_PageHandle::~SysPage_PageHandle()
@@ -20,8 +20,8 @@ SysPage_PageHandle::SysPage_PageHandle(const SysPage_PageHandle &pageHandle)
   // Just copy the local variables since there is no local memory
   // allocation involved
 
-  this->pageNumber = pageHandle.pageNumber
-  this->pageData = pageHandle.pageData
+  this->pageNumber = pageHandle.pageNumber;
+  this->pageData = pageHandle.pageData;
 }
 
 SysPage_PageHandle& SysPage_PageHandle::operator = (const SysPage_PageHandle &pageHandle)
@@ -29,8 +29,7 @@ SysPage_PageHandle& SysPage_PageHandle::operator = (const SysPage_PageHandle &pa
   // Check for self-assignment
   if (this != &pageHandle) {
 
-    // Just copy the pointers since there is no local memory
-    // allocation involved
+    // Just copy the pointers since there is no local memory allocation involved
     this->pageNumber = pageHandle.pageNumber;
     this->pageData = pageHandle.pageData;
   }
@@ -39,13 +38,13 @@ SysPage_PageHandle& SysPage_PageHandle::operator = (const SysPage_PageHandle &pa
   return (*this);
 }
 
-ErrCode SysPage_PageHandle::getData(char *&pData)
+ErrCode SysPage_PageHandle::getData(char* &pData)
 {
   // Page must refer to a pinned page
   if(pageData == NULL)
     return SYSPAGE_PAGEUNPINNED;
 
-  pData = pageData;
+  pData = pageData; //using the overloaded = operator
 
   return 0;
 }
