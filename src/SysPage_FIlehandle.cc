@@ -8,7 +8,7 @@ SysPage_FileHandle::SysPage_FileHandle() // Default Constructor
   isFileOpen = FALSE;
   bufferMgr = NULL;
 }
-~SysPage_FileHandle() // Default Destructor
+SysPage_FileHandle::~SysPage_FileHandle() // Default Destructor
 {
 
 }
