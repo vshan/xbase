@@ -4,6 +4,13 @@ Record_FileHandle::Record_FileHandle()
 
 }
 
+// Destructor
+Record_FileHandle::~Record_FileHandle()
+{
+	if (syspHandle != NULL)
+		delete syspHandle;
+}
+
 ErrCode Record_FileHandle::open(SysPage_FileHandle* spfh, int size)
 {
 	isFileOpen = true;
@@ -11,10 +18,12 @@ ErrCode Record_FileHandle::open(SysPage_FileHandle* spfh, int size)
  	*syspHandle = *spfh;
 	SysPage_PageHandle sph;
  	spfh->getThisPage(0, sph);
- 	spfh->unpinPage(0);
+ 	spfh->unpinPage(0); // needs to be called everytime getThisPage() is called
  	this->getFileHeader(sph);
  	isHdrChanged = true;
- 	ErrCode invalid = isValid(); if (invalid) return invalid;
+ 	ErrCode invalid = isValid();
+    if(invalid)
+        return invalid;
 
  	return 0;
 }
@@ -30,13 +39,16 @@ ErrCode Record_FileHandle::getNextFreeSlot(SysPage_PageHandle &sh, int& pageNum,
 	ErrCode invalid = isValid(); if (invalid) return invalid;
 
  	ErrCode ec;
- 	Record_PageHdr pHdr(this->getNumSlots());
+ 	Record_PageHdr pHdr(this->getNumSlots()); // struct Record_FileHdr defined in Record_Internal.h
 
- 	this->getNextFreePage(pageNum);
- 	syspHandle->getThisPage(pageNum, sh);
- 	syspHandle->unpinPage(pageNum);
- 	this->getPageHeader(sh, pHdr);
+ 	if((ec = this->getNextFreePage(pageNum))
+        || (ec = syspHandle->getThisPage(pageNum, sh))
+        || (ec = syspHandle->unpinPage(pageNum))
+        || (ec = this->getPageHeader(sh, pHdr)))
+            return ec;
+
  	bitmap b(pHdr.freeSlotMap, this->getNumSlots());
+
  	for (int i = 0; i < this->getNumSlots(); i++)
  	{
  		if (b.test(i)) {
@@ -44,7 +56,8 @@ ErrCode Record_FileHandle::getNextFreeSlot(SysPage_PageHandle &sh, int& pageNum,
  			return 0;
  		}
   	}
-  	return -1;
+    // This page is full
+  	return -1; // unexpected error
 }
 
 ErrCode Record_FileHandle::getNextFreePage(int& pageNum)
@@ -53,44 +66,55 @@ ErrCode Record_FileHandle::getNextFreePage(int& pageNum)
 	SysPage_PageHandle sph;
 	Record_PageHdr pHdr(this->getNumSlots());
 	int p;
+    ErrCode ec;
 
 	if (hdr.firstFree != RECORD_PAGE_LIST_END)
 	{
-		syspHandle->getThisPage(hdr.firstFree, sph);
-		ph.getPageNum(p);
-		syspHandle->markDirty(p);
-		syspHandle->unpinPage(hdr.firstFree);
-		this->getPageHeader(sph, pHdr);
+		if((ec = syspHandle->getThisPage(hdr.firstFree, sph))
+            || (ec = ph.getPageNum(p))
+            || (ec = syspHandle->markDirty(p))
+            || (ec = syspHandle->unpinPage(hdr.firstFree))
+            || (ec = this->getPageHeader(sph, pHdr)))
+                return ec;
 	}
+
 	if (hdr.numPages == 0 ||
 	    hdr.firstFree == RECORD_PAGE_LIST_END ||
 		pHdr.numFreeSlots == 0)
 	{
 		if(pHdr.nextFree == RECORD_PAGE_FULLY_USED)
 		{
-
+            //std::cerr<<Record_FileHandle :: getNextFreePage -Page Full!;
 		}
+
 		{
 			char *pData;
-			syspHandle->allocatePage(sph);
-			sph.getData(pData);
-			sph.getPageNum(pageNum);
+            ErrCode ec;
 
+			if((ec = syspHandle->allocatePage(sph))
+                || (ec = sph.getData(pData))
+                || (ec = sph.getPageNum(pageNum)))
+                    return ec;
+
+            // Add page header
 			Record_PageHdr phdr(this->getNumSlots());
 			phdr.nextFree = RECORD_PAGE_LIST_END;
 			bitmap b(this->getNumSlots());
-			b.set();
+			b.set(); // Initially all slot are free
 			b.to_char_buf(phdr.freeSlotMap, b.numChars());
 			phdr.to_buf(pData);
-			syspHandle->unpinPage(pageNum);
+			if((ec = syspHandle->unpinPage(pageNum)))
+                return ec;
 		}
 
+        // Add page to the free list
 		hdr.firstFree = pageNum;
 		hdr.numPages++;
+        assert(hdr.numPages > 1);
 		isHdrChanged = true;
-		return 0;
+		return 0; // pageNum is set correctly
 	}
-
+    // return existing free page
 	pageNum = hdr.firstFree;
 	return 0;
 }
@@ -98,7 +122,9 @@ ErrCode Record_FileHandle::getNextFreePage(int& pageNum)
 ErrCode Record_FileHandle::getPageHeader(SysPage_PageHandle sph, Record_PageHdr& pHdr)
 {
 	char * buf;
-    sph.getData(buf);
+    ErrCode ec;
+    if((ec = sph.getData(buf))
+        return ec;
     pHdr.from_buf(buf);
     return 0;
 }
@@ -106,15 +132,21 @@ ErrCode Record_FileHandle::getPageHeader(SysPage_PageHandle sph, Record_PageHdr&
 ErrCode Record_FileHandle::setPageHeader(SysPage_PageHandle sph, Record_PageHdr& pHdr)
 {
 	char * buf;
-	sph.getData(buf);
+	ErrCode ec;
+    if((ec = sph.getData(buf))
+        return ec;
 	pHdr.to_buf(buf);
 	return 0;
 }
 
+// void *memcpy(void* destination, const void* source, size_t num);
+// get header from the first page of a newly opened file
 ErrCode Record_FileHandle::getFileHeader(SysPage_PageHandle sph)
 {
 	char * buf;
-	sph.getData(buf);
+    ErrCode ec;
+	if((ec = sph.getData(buf))
+        return ec;
 	memcpy(&hdr, buf, sizeof(hdr));
 	return 0;
 }
@@ -122,18 +154,24 @@ ErrCode Record_FileHandle::getFileHeader(SysPage_PageHandle sph)
 ErrCode Record_FileHandle::setFileHeader(SysPage_PageHandle sph)
 {
 	char * buf;
-	sph.getData(buf);
+    ErrCode ec;
+	if((ec = sph.getData(buf))
+        return ec;
 	memcpy(buf, &hdr, sizeof(hdr));
 	return 0;
 }
 
 ErrCode Record_FileHandle::getSlotPointer(SysPage_PageHandle sph, int slotNum, char *& pData)
 {
-	sph.getData(pData);
-	bitmap b(this->getNumSlots());
-	pData = pData + (Record_PageHdr(this->getNumSlots()).size());
-	pData = pData + slotNum * this->fullRecordSize();
-	return 0;
+    ErrCode invalid = isValid(); if(invalid) return invalid;
+    ErrCode ec = sph.getData(pData);
+	if(ec >= 0)
+    {
+        bitmap b(this->getNumSlots());
+    	pData = pData + (Record_PageHdr(this->getNumSlots()).size());
+    	pData = pData + slotNum * this->fullRecordSize();
+    }
+	return ec;
 }
 
 int Record_FileHandle::getNumSlots()
@@ -153,12 +191,6 @@ int Record_FileHandle::getNumSlots()
 	else {
 		return RECORD_RECSIZEMISMATCH;
 	}
-}
-
-Record_FileHandle::~Record_FileHandle()
-{
-	if (syspHandle != NULL)
-		delete syspHandle;
 }
 
 ErrCode Record_FileHandle::getRec(const RID &rid, Record_Record &rec)
@@ -264,6 +296,10 @@ ErrCode Record_FileHandle::updateRec(const Record_Record &rec)
 
 ErrCode Record_FileHandle::forcePages(int pageNum)
 {
+    ErrCode ec = invalid = IsValid(); if(invalid) return invalid;
+    if(!this->isValidPageNum(pageNum) && pageNum != ALL_PAGES)
+        return RECORD_BAD_RID;
+
 	return syspHandle->forcePages(pageNum);
 }
 

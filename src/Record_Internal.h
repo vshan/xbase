@@ -20,46 +20,56 @@ struct Record_PageHdr {
   int numFreeSlots;
 
   Record_PageHdr(int numSlots) : numSlots(numSlots), numFreeSlots(numSlots)
-      { freeSlotMap = new char[this->mapsize()];}
+  {
+      freeSlotMap = new char[this->mapsize()];
+  }
 
   ~Record_PageHdr()
-      { delete [] freeSlotMap; }
+  {
+      delete [] freeSlotMap;
+  }
 
   int size() const
-      { return sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots)
-          + bitmap(numSlots).numChars()*sizeof(char); }
+  {
+      return sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots)
+          + bitmap(numSlots).numChars()*sizeof(char);
+  }
   int mapsize() const
-      { return this->size() - sizeof(nextFree)
-          - sizeof(numSlots) - sizeof(numFreeSlots);}
+  {
+      return this->size() - sizeof(nextFree)
+          - sizeof(numSlots) - sizeof(numFreeSlots);
+  }
+
   int to_buf(char *& buf) const
-      {
-        memcpy(buf, &nextFree, sizeof(nextFree));
-        memcpy(buf + sizeof(nextFree), &numSlots, sizeof(numSlots));
-        memcpy(buf + sizeof(nextFree) + sizeof(numSlots),
-               &numFreeSlots, sizeof(numFreeSlots));
-        memcpy(buf + sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots),
-               freeSlotMap, this->mapsize()*sizeof(char));
-        return 0;
-      }
+  {
+    // void *memcpy(void* destination, const void* source, size_t num);
+    memcpy(buf, &nextFree, sizeof(nextFree));
+    memcpy(buf + sizeof(nextFree), &numSlots, sizeof(numSlots));
+    memcpy(buf + sizeof(nextFree) + sizeof(numSlots),
+           &numFreeSlots, sizeof(numFreeSlots));
+    memcpy(buf + sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots),
+           freeSlotMap, this->mapsize()*sizeof(char));
+    return 0;
+  }
+
   int from_buf(const char * buf)
-      {
-        memcpy(&nextFree, buf, sizeof(nextFree));
-        memcpy(&numSlots, buf + sizeof(nextFree), sizeof(numSlots));
-        memcpy(&numFreeSlots, buf + sizeof(nextFree) + sizeof(numSlots),
-               sizeof(numFreeSlots));
-        memcpy(freeSlotMap,
-               buf + sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots),
-               this->mapsize()*sizeof(char));
-        return 0;
-      }
-};
+  {
+    memcpy(&nextFree, buf, sizeof(nextFree));
+    memcpy(&numSlots, buf + sizeof(nextFree), sizeof(numSlots));
+    memcpy(&numFreeSlots, buf + sizeof(nextFree) + sizeof(numSlots),
+           sizeof(numFreeSlots));
+    memcpy(freeSlotMap,
+           buf + sizeof(nextFree) + sizeof(numSlots) + sizeof(numFreeSlots),
+           this->mapsize()*sizeof(char));
+    return 0;
+  }
+}; // sruct ends
 
 #define RECORD_PAGE_LIST_END   -1       // end of list of free pages
 #define RECORD_PAGE_FULLY_USED -2       // page is fully used with no free slots
 
 #define RECORD_BADRECSIZE      (START_RECORD_WARN + 0)  // rec size invalid <= 0
-#define RECORD_BADRECSIZE      (START_RECORD_WARN + 0)  // rec size invalid <= 0
-#define RECORD_NORECATRID (START_RECORD_WARN + 1)  // This rid has no record
+#define RECORD_NORECATRID      (START_RECORD_WARN + 1)  // This rid has no record
 
 #define RECORD_LASTWARN RECORD_NORECATRID
 
