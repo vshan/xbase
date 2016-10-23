@@ -204,13 +204,21 @@ ErrCode Record_FileHandle::getRec(const RID &rid, Record_Record &rec)
 	rid.getSlotNum(s);
 	SysPage_PageHandle sph;
 	Record_PageHdr pHdr(this->getNumSlots());
-	syspHandle->getThisPage(p, sph);
-	syspHandle->unpinPage(p);
-	this->getPageHeader(sph, pHdr);
+
+    ErrCode ec =0;
+	if((ec = syspHandle->getThisPage(p, sph))
+        || (ec = syspHandle->unpinPage(p))
+        || (ec = this->getPageHeader(sph, pHdr)))
+            return ec;
+
 	bitmap b(pHdr.freeSlotMap, this->getNumSlots());
 
+    if(b.test(s)) // already free
+        return RECORD_NORECATRID;
+
 	char * pData  = NULL;
-	this->getSlotPointer(sph, s, pData);
+	if((ec = this->getSlotPointer(sph, s, pData)))
+        return ec;
 
 	rec.setData(pData, hdr.extRecordSize, rid);
 	return 0;
@@ -219,30 +227,46 @@ ErrCode Record_FileHandle::getRec(const RID &rid, Record_Record &rec)
 ErrCode Record_FileHandle::insertRec(const char * pData, RID &rid)
 {
 	ErrCode invalid = isValid(); if (invalid) return invalid;
+    if(pData == NULL)
+        return RECORD_NULLRECORD;
+
 	SysPage_PageHandle sph;
 	Record_PageHdr pHdr(this->getNumSlots());
 	int p; // pagenum
 	int s; // slotnum
 	char * pSlot;
-	this->getNextFreeSlot(sph, p, s);
-	this->getPageHeader(sph, pHdr);
+
+    ErrCode ec;
+	if((ec = this->getNextFreeSlot(sph, p, s)))
+        return ec;
+	if((ec = this->getPageHeader(sph, pHdr))
+        return ec;
 	bitmap b(pHdr.freeSlotMap, this->getNumSlots());
-	this->getSlotPointer(sph, s, pSlot);
+	if((ec = this->getSlotPointer(sph, s, pSlot)))
+        return ec;
 	rid = RID(p, s);
 	memcpy(pSlot, pData, this->fullRecordSize());
-	b.reset(s);
+
+    b.reset(s); // slot s is no longer free
 	pHdr.numFreeSlots--;
 	if (pHdr.numFreeSlots == 0) {
+        // remove from free list
 		hdr.firstFree = pHdr.nextFree;
 		pHdr.nextFree = RECORD_PAGE_FULLY_USED;
 	}
 	b.to_char_buf(pHdr.freeSlotMap, b.numChars());
-	this->setPageHeader(sph, pHdr);
+	ec = this->setPageHeader(sph, pHdr);
+
 	return 0;
 }
 
 ErrCode Record_FileHandle::deleteRec(const RID &rid)
 {
+    ErrCode invalid = isValid(); if(invalid) return invalid;
+
+    if(!this->isValidRID(rid))
+        return RECORD_BAD_RID;
+
 	int p; // pagenum
 	int s; // slotnum
 	rid.getPageNum(p);
@@ -250,27 +274,38 @@ ErrCode Record_FileHandle::deleteRec(const RID &rid)
 	SysPage_PageHandle sph;
 	Record_PageHdr pHdr(this->getNumSlots());
 
-	syspHandle->getThisPage(p, sph);
-	syspHandle->markDirty(p);
-	syspHandle->unpinPage(p);
-	this->getPageHeader(sph, pHdr);
+    ErrCode ec =0;
+    if((ec = syspHandle->getThisPage(p, sph)))
+        return ec;
+	if((ec = syspHandle->markDirty(p)))
+        return ec;
+	if((ec = syspHandle->unpinPage(p)))
+        return ec;
+	if((ec = this->getPageHeader(sph, pHdr)))
+        return ec;
 
 	bitmap b(pHdr.freeSlotMap, this->getNumSlots());
 
-	b.set(s);
+    if(b.test(s)) // already free
+        return RM_NORECATRID;
+
+	b.set(s); // s is now free
 	if (pHdr.numFreeSlots == 0)
 	{
+        // this page used to be full and not be on the free list
+        // add it to the free list now
 		pHdr.nextFree = hdr.firstFree;
 		hdr.firstFree = p;
 	}
 	pHdr.numFreeSlots++;
 	b.to_char_buf(pHdr.freeSlotMap, b.numChars());
-	this->setPageHeader(sph, pHdr);
-	return 0;
+	ec = this->setPageHeader(sph, pHdr);
+	return ec;
 }
 
 ErrCode Record_FileHandle::updateRec(const Record_Record &rec)
 {
+    ErrCode invalid = isValid(); if(invalid) return invalid;
 	RID rid;
 	rec.getRid(rid);
 	int p;
@@ -278,15 +313,24 @@ ErrCode Record_FileHandle::updateRec(const Record_Record &rec)
 	rid.getPageNum(p);
 	rid.getSlotNum(s);
 
+    if(!this->isValidRid(rid))
+        return RECORD_BAD_RID;
+
 	SysPage_PageHandle sph;
 	char * pSlot;
 
 	Record_PageHdr pHdr(this->getNumSlots());
-	syspHandle->getThisPage(p, sph);
-	syspHandle->markDirty(p);
-	syspHandle->unpinPage(p);
-	this->getPageHeader(sph, pHdr);
 
+	if((ec = syspHandle->getThisPage(p, sph))
+        || (ec = syspHandle->markDirty(p))
+        || (ec = syspHandle->unpinPage(p))
+        || (ec = this->getPageHeader(sph, pHdr)))
+            return ec;
+
+    bitmap b(pHdr.freeSlotMap, this->getNumSlots());
+    if(b.test(s)) // already free - cannot update
+        return RECORD_NORECATRID;
+        
 	char * pData = NULL;
 	rec.getData(pData);
 	this->getSlotPointer(sph, s, pSlot);

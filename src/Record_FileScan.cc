@@ -22,6 +22,7 @@ ErrCode Record_FileScan::openScan(const Record_FileHandle &fileHandle,
 		return RECORD_HANDLEOPEN;
 	}
 
+	// const_cast can be used to change non-const class members inside a const member function.
 	prmh = const_cast<Record_FileHandle*>(&fileHandle);
 	isOpen = true;
 	pred = new Predicate(attrType,
