@@ -6,7 +6,7 @@ class BTreeNode
 public:
 	BTreeNode(AttrType attrType, int attrLength,
 		      SysPage_PageHandle &sph, bool newPage = true,
-		      int pageSize = PF_PAGE_SIZE);
+		      int pageSize = SYSPAGE_PAGE_SIZE);
 	~BTreeNode();
 	ErrorCode ResetBTreeNode(SysPage_PageHandle &sph, const BTreeNode& rhs);
 	int destroy();
@@ -46,7 +46,7 @@ private:
 	int attrLength;
 	AttrType attrType;
 	int order;
-	RID pageRID;	
+	RID pageRID;
 };
 
 #endif // BTREE_NODE_H

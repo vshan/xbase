@@ -1,8 +1,7 @@
 BTreeNode::BTreeNode(AttrType attrType, int attrLength,
 	                 SysPage_PageHandle& sph, bool newPage,
 	                 int pageSize)
-:keys(NULL), rids(NULL),
-attrLength(attrLength), attrType(attrType)
+:keys(NULL), rids(NULL),attrLength(attrLength), attrType(attrType)
 {
 	order = floor(
 		(pageSize + sizeof(numKeys) + 2*sizeof(int)) /
@@ -309,7 +308,7 @@ int BTreeNode::cmpKey(const void * a, const void * b)
 		if (*(MyType*)a == *(MyType*)b) return 1;
 		if (*(MyType*)a < *(MyType*)b) return -1;
 	}
-    
+
     return 0;
 }
 

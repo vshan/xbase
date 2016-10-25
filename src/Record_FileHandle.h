@@ -22,6 +22,7 @@ public:
 private:
 	bool isValidPageNum(const int pageNum);
 	bool isValidRID(const RID rid);
+	ErrCode isValid();
 
 	ErrCode getNextFreePage(int& pageNum);
 	ErrCode getNextFreeSlot(SysPage_PageHandle& sh, int& pageNum, int& slotNum);

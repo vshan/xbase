@@ -17,7 +17,7 @@ public:
     ErrCode closeFile(Record_FileHandle & fileHandle);
 
 private:
-    SysPage_Manager &sysPageManager; // A reference to external SysPage_Manager
+    SysPage_Manager &spm; // A reference to external SysPage_Manager
 };
 
 #endif  // RECORD_MANAGER_H

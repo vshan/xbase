@@ -47,12 +47,12 @@ typedef int ErrCode;
 #define END_SYSPAGE_ERR    (-100)
 #define START_RECORD_ERR  (-101)
 #define END_RECORD_ERR    (-200)
-#define START_IX_ERR  (-201)
-#define END_IX_ERR    (-300)
-#define START_SM_ERR  (-301)
-#define END_SM_ERR    (-400)
-#define START_QL_ERR  (-401)
-#define END_QL_ERR    (-500)
+#define START_INDEX_ERR  (-201)
+#define END_INDEX_ERR    (-300)
+#define START_SYSMAN_ERR  (-301)
+#define END_SYSMAN_ERR    (-400)
+#define START_QUERY_ERR  (-401)
+#define END_QUERY_ERR    (-500)
 
 //
 // TRUE, FALSE and BOOLEAN

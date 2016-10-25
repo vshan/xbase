@@ -18,7 +18,7 @@ public:
 
   int returnPage() const          // Return page number
   { return page; }
-  
+
   int returnSlot() const          // Return slot number
   { return slot; }
 

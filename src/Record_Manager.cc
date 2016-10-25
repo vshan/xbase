@@ -26,7 +26,7 @@ ErrCode Record_Manager::createFile(const char *fileName, int recordSize)
     }
 
     // call to SysPage createFile method
-    int ec = sysPageManager.createFile(fileName);
+    int ec = spm.createFile(fileName);
 
     if(ec < 0)
     {
