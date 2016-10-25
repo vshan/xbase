@@ -18,7 +18,7 @@ struct Value {
 struct Condition {
     RelAttr lhsAttr; // left-hand side attribute
     CompOp op;  // comparison operator
-    bool isRhsIsAttr;   // TRUE if right-hand side is an attribute and not a value
+    bool ifRhsIsAttr;   // TRUE if right-hand side is an attribute and not a value
     RelAttr rhsAttr;      // right-hand side attribute if bRhsIsAttr = TRUE
     Value   rhsValue;     // right-hand side value if bRhsIsAttr = FALSE
 };
