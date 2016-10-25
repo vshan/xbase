@@ -22,6 +22,7 @@ ErrCode Record_FileScan::openScan(const Record_FileHandle &fileHandle,
 		return RECORD_HANDLEOPEN;
 	}
 
+	// const_cast can be used to change non-const class members inside a const member function.
 	prmh = const_cast<Record_FileHandle*>(&fileHandle);
 	isOpen = true;
 	pred = new Predicate(attrType,
@@ -33,8 +34,13 @@ ErrCode Record_FileScan::openScan(const Record_FileHandle &fileHandle,
 	return 0;
 }
 
+// go to the slot before the first slot with data
 ErrCode Record_FileScan::goToPage(int p)
 {
+	if(!isOpen)
+		return RECORD_FNOTOPEN;
+	assert(prmh != NULL && pred!=NULL && isOpen);
+
 	current = RID(p, -1);
 	Record_Record rec;
 	getNextRec(rec);
@@ -46,14 +52,23 @@ ErrCode Record_FileScan::goToPage(int p)
 
 ErrCode Record_FileScan::getNextRec(Record_Record &rec)
 {
+	if(!isOpen)
+		return RECORD_FNOTOPEN;
+	assert(prmh != NULL && pred!=NULL && isOpen);
+
 	SysPage_PageHandle sph;
 	Record_PageHdr pHdr(prmh->getNumSlots());
 
-	for (int j = current.returnPage(); j > prmh->getNumPages(); j++)
+	ErrCode ec;
+	for (int j = current.returnPage(); j < prmh->getNumPages(); j++)
 	{
-		prmh->syspHandle->getThisPage(j, ph);
-		prmh->syspHandle->unpinPage(j);
-		prmh->getPageHeader(sph, pHdr);
+		if((ec = prmh->syspHandle->getThisPage(j, ph))
+			|| (ec = prmh->syspHandle->unpinPage(j)))
+				return ec;
+
+		if((ec = prmh->getPageHeader(sph, pHdr)))
+			return ec;
+
 		bitmap b(pHdr.freeSlotMap, prmh->getNumSlots());
 		int i = -1;
 		if (current.returnPage() == j)
@@ -62,14 +77,18 @@ ErrCode Record_FileScan::getNextRec(Record_Record &rec)
 			i = 0;
 		for (; i < prmh->getNumSlots(); i++)
 		{
-			if (!b.test(i)) {
-				current = RID(j, i);
+			if (!b.test(i))
+			{
+				current = RID(j, i); // j=pageNum, i=slotNum
 				prmh->getRec(current, rec);
 				char * pData = NULL;
 				rec.getData(pData);
-				if (pred->eval(pData, pred->initOp())) {
+				if (pred->eval(pData, pred->initOp()))
+				{
 					return 0;
-				} else {
+				}
+				else
+				{
 					// get next rec
 				}
 			}
@@ -82,6 +101,8 @@ ErrCode Record_FileScan::closeScan()
 {
 	if (!isOpen)
 		return RECORD_FNOTOPNEN;
+	assert(prmh!=NULL && pred!=NULL);
+
 	isOpen = false;
 	if (pred != NULL)
 		delete pred;

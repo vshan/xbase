@@ -7,7 +7,7 @@ public:
    SysPage_PageHandle();
    ~SysPage_PageHandle();
 
-   ErrCode getData(char *&pData);
+   ErrCode getData(char* &pData);
    ErrCode getPageNum(int &pageNum);
 private:
    int pageNumber;
