@@ -3,6 +3,13 @@
 #define MEMORY_FD -1
 #define MEMORY_PAGENUM 1
 
+// L_SET is used to indicate the "whence" argument of the lseek call
+// defined in "/usr/include/unistd.h".  A value of 0 indicates to
+// move to the absolute location specified.
+#ifndef L_SET
+#define L_SET  0
+#endif
+
 struct SysPage_BufPageDesc {
    char *pData;
    int next;
@@ -28,6 +35,7 @@ public:
    ErrCode flushPages(int fd);
    // Force a page, but do not remove from buffer
    ErrCode forcePage(int fd, int pageNum);
+   ErrCode insertAtHead(int slot);
    ErrCode clearBuffer();
 
 private:

@@ -57,17 +57,14 @@ struct Record_PageHdr {
 #define RECORD_PAGE_LIST_END   -1       // end of list of free pages
 #define RECORD_PAGE_FULLY_USED -2       // page is fully used with no free slots
 
-<<<<<<< HEAD
-#define R_BADRECSIZE      (START_RECORD_WARN + 0)  // rec size invalid <= 0
-=======
 #define RECORD_BADRECSIZE      (START_RECORD_WARN + 0)  // rec size invalid <= 0
->>>>>>> vinaym
+#define RECORD_BADRECSIZE      (START_RECORD_WARN + 0)  // rec size invalid <= 0
 #define RECORD_NORECATRID (START_RECORD_WARN + 1)  // This rid has no record
 
 #define RECORD_LASTWARN RECORD_NORECATRID
 
 #define RECORD_SIZETOOBIG      (START_RECORD_ERR - 0)  // record size too big
-#define RECORD_SYSPAGE         (START_RECORD_ERR - 1)  // error in PF
+#define RECORD_SYSPAGE         (START_RECORD_ERR - 1)  // error in SYSPAGE
 #define RECORD_NULLRECORD      (START_RECORD_ERR - 2)
 #define RECORD_RECSIZEMISMATCH (START_RECORD_ERR - 3)  // record size mismatch
 #define RECORD_HANDLEOPEN      (START_RECORD_ERR - 4)

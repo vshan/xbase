@@ -8,7 +8,7 @@ SysPage_FileHandle::SysPage_FileHandle() // Default Constructor
   isFileOpen = FALSE;
   bufferMgr = NULL;
 }
-~SysPage_FileHandle() // Default Destructor
+SysPage_FileHandle::~SysPage_FileHandle() // Default Destructor
 {
 
 }
@@ -22,13 +22,13 @@ ErrCode SysPage_PageHandle::getFirstPage(SysPage_PageHandle &pageHandle) // Get 
 ErrCode SysPage_PageHandle::getLastPage(SysPage_PageHandle &pageHandle) // Get the last page of the file
 {
   //get previous page from last + 1 page
-  return (getPreviousPage((int)hdr.numPages,pageHandle))
+  return (getPreviousPage((int)hdr.numPages,pageHandle));
 }
 
 ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHandle) // Get the succeeding page to the
                                                                                      // given page number
 {
-  int ec    // error code
+  int ec;    // error code
 
   // Check if file is open
   if(!isFileOpen)
@@ -42,18 +42,18 @@ ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHan
   for (pageNum++; pageNum < hdr.numPages; pageNum++)
   {
     if(!(ec = getThisPage(pageNum,pageHandle)))
-      return (0)
+      return (0);
 
     if(ec != SYSPAGE_INVALIDPAGE)
-      return (ec)
+      return (ec);
   }
   // return EOF if othing is found
-  return SYSPAGE_EOF
+  return SYSPAGE_EOF;
 }
 
 ErrCode SysPage_PageHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pageHandle)
 {
-  int ec  // Error code
+  int ec; // Error code
 
   // Check if file is open
   if(!isFileOpen)
@@ -67,13 +67,13 @@ ErrCode SysPage_PageHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pag
   for (pageNum--; pageNum >= 0; pageNum--)
   {
     if(!(ec = getThisPage(pageNum,pageHandle)))
-      return (0)
+      return (0);
 
     if(ec != SYSPAGE_INVALIDPAGE)
-      return (ec)
+      return (ec);
   }
 
-  return SYSPAGE_EOF
+  return SYSPAGE_EOF;
 }
 
 ErrCode SysPage_PageHandle::getThisPage(int pageNum, SysPage_PageHandle &pageHandle)
@@ -122,7 +122,7 @@ ErrCode SysPage_PageHandle::allocatePage(SysPage_PageHandle &pageHandle)
       pageNum = hdr.firstFree;
 
       // Get the first free page into the buffer
-      if ((ec = bufferMgr->getPage(unixfd, pageNum, &pPageBuf)))
+      if ((ec = bufferMgr->getPage(unixfd, pageNum, &pageBuf)))
         return (ec);
 
       // Set the first free page to the next page on the free list
@@ -136,7 +136,7 @@ ErrCode SysPage_PageHandle::allocatePage(SysPage_PageHandle &pageHandle)
      // Allocate a new page in the file
      if ((ec = bufferMgr->allocatePage(unixfd,
            pageNum,
-           &pPageBuf)))
+           &pageBuf)))
         return (ec);
      hdr.numPages++;
   }
