@@ -16,10 +16,13 @@ ErrCode Record_FileHandle::open(SysPage_FileHandle* spfh, int size)
 	isFileOpen = true;
 	spfh = new SysPage_FileHandle;
  	*syspHandle = *spfh;
-	SysPage_PageHandle sph;
- 	spfh->getThisPage(0, sph);
- 	spfh->unpinPage(0); // needs to be called everytime getThisPage() is called
- 	this->getFileHeader(sph);
+
+    ErrCode ec;
+    SysPage_PageHandle sph;
+ 	if((ec = spfh->getThisPage(0, sph))
+        || (ec = spfh->unpinPage(0))  // needs to be called everytime getThisPage() is called
+        || (ec = this->getFileHeader(sph)))
+            return ec;
  	isHdrChanged = true;
  	ErrCode invalid = isValid();
     if(invalid)
@@ -330,7 +333,7 @@ ErrCode Record_FileHandle::updateRec(const Record_Record &rec)
     bitmap b(pHdr.freeSlotMap, this->getNumSlots());
     if(b.test(s)) // already free - cannot update
         return RECORD_NORECATRID;
-        
+
 	char * pData = NULL;
 	rec.getData(pData);
 	this->getSlotPointer(sph, s, pSlot);
