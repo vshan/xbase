@@ -22,8 +22,8 @@ public:
   ErrCode dropTable (const char *relName);
   ErrCode dropIndex (const char *relName, const char *attrName);
   ErrCode load (const char *relName);
-  ErrCode help ();
-  ErrCode help (const char *relName);
+  // ErrCode help ();
+  // ErrCode help (const char *relName);
   ErrCode print (const char *relName);
   ErrCode set (const char *paramName);
   ErrCode get (const string& paramName, string& value) const;
@@ -44,7 +44,7 @@ public:
   ErrCode loadRecord (const char *relName, int buflen, const char buff[]);
   bool isAttrIndexed (const char *relname, const char *attrName) const;
   ErrCode dropIndexFromAttrCatAlone (const char *relName, const char *attrName);
-  ErrCode resetIndexFromCatAlone (const char *relName, const char *attrName);
+  ErrCode resetIndexFromAttrCatAlone (const char *relName, const char *attrName);
 
 private:
   Record_Manager &rmm;
