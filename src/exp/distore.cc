@@ -119,71 +119,79 @@ StatusCode DS_RemoteManager::remoteLoadFile(const char *fileName,
 StatusCode DS_RemoteManager::getRemoteHeaderFile(const char *fileName,
                                                  string &header_content)
 {
-  char *recv_msg = new char[DS_CHAR_BUF_SIZE];
+  char recv_msg[DS_CHAR_BUF_SIZE], proto_msg[DS_CHAR_BUF_SIZE];
   memset(recv_msg, 0, DS_CHAR_BUF_SIZE);
-  string proto_msg("HeyHo!");
-  //makeProtocolMsg(DS_PROTO_LOAD_FILE, fileName, proto_msg);
+  
+  makeProtocolMsg(DS_PROTO_LOAD_FILE, fileName, proto_msg);
   sendrecvFrom(DS_NAME_SERVER, proto_msg, recv_msg);
   //parse_msg(recv_msg, parse_obj);
   //header_content = parse_obj->value;
-  header_content = recv_msg;
+  header_content(recv_msg);
   return DS_SUCCESS;
 }
 
-StatusCode DS_RemoteManager::sendrecvFrom(int server_code, string send_msg,
+StatusCode DS_RemoteManager::sendRecvFrom(int server_code, string send_msg,
                                                            string &recv_msg)
 {
   boost::asio::ip::tcp::socket sock;
-  string server_addr = servers[server_code];
-  rawSendRecv(server_addr, send_msg, recv_msg);
+  pair<char *, char *> p = servers[server_code];
+  rawSendRecv(p.first, p.second, send_msg, recv_msg);
   return DS_SUCCESS;
 }
 
-StatusCode DS_RemoteManager::rawSendRecv(string server_addr,
-                                         string send_msg,
-                                         string &recv_msg)
+StatusCode DS_RemoteManager::rawSendRecv(char *host, char *port, 
+                                         char request[], char reply[])
 {
-  establishConn(server_addr, sock);
-  send_to(sock, send_msg);
-  recv_from(sock, recv_msg);
-  close_connection(sock);
+  boost::asio::ip::tcp::socket *s = enableConnection(host, port);
+  writeRead(s, request, reply);
   return DS_SUCCESS;
 }
 
-StatusCode DS_RemoteManager::establishConn(string server_addr,
-                                           boost::asio::ip::tcp::socket &sock)
+boost::asio::ip::tcp::socket* DS_RemoteManager::enableConnection(char *host, char *port)
 {
   boost::asio::io_service io_service;
+
+  tcp::socket *s = new tcp::socket(io_service);
   tcp::resolver resolver(io_service);
-  tcp::resolver::query query(server_addr, "daytime");
-  tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
-  tcp::socket socket(io_service);
-  boost::asio::connect(socket, endpoint_iterator);
-  sock = socket;
-  return DS_SUCCESS;
+  boost::asio::connect(*s, resolver.resolve({host, port}));
+  return s;
 }
 
-StatusCode DS_RemoteManager::sendTo(boost::asio::ip::tcp::socket &sock,
-                                    string send_msg)
+size_t DS_RemoteManager::writeRead(tcp::socket *s, char request[], char reply[])
 {
-  boost::system::error_code ignored_error;
-  boost::asio::write(socket, boost::asio::buffer(send_msg), ignored_error);
-  return DS_SUCCESS;
+  size_t request_length = std::strlen(request);
+    boost::asio::write(*s, boost::asio::buffer(request, request_length));
+
+  size_t reply_length = boost::asio::read(*s,
+        boost::asio::buffer(reply, request_length));
+
+  return reply_length;
 }
 
-StatusCode DS_RemoteManager::recvFrom(boost::asio::ip::tcp::socket &sock,
-                                      string &recv_msg)
+StatusCode DS_RemoteManager::getRemotePage(char *host, char *port, int pageNum, char page_content[])
 {
-  boost::array<char, 128> buf;
-  boost::system::error_code error;
+  char proto_msg[DS_CHAR_BUF_SIZE], reply_msg[DS_CHAR_BUF_SIZE];
+  makeProtocolMsg(DS_PROTO_LOAD_PAGE, std::itoa(pageNum), proto_msg);
+  rawSendRecv(host, port, proto_msg, reply_msg);
+  parseProtocolMsg(reply_msg, reply_obj);
+}
 
-  size_t len = socket.read_some(boost::asio::buffer(buf), error);
+StatusCode DS_RemoteManager::makeProtocolMsg(int proto_type, void *value, char msg[])
+{
+  // 01|PageNum|FileName
+  if (proto_type == DS_PROTO_LOAD_PAGE)
+  {
+    std::string s = std::itoa(50) + "|" std::string((char *)value) + "|" + std::string(fileName);
+    memcpy((char *)msg, s.c_str(), s.length()); 
+  }
+}
 
-  if (error == boost::asio::error::eof)
-    break; // Connection closed cleanly by peer.
-  else if (error)
-    throw boost::system::system_error(error); // Some other error.
+StatusCode DS_RemoteManager::parseProtocolMsg(string msg, ProtocolParseObj &ppo)
+{
+  vector<string> strs;
+  boost::split(strs,msg,boost::is_any_of("|"));
 
-  recv_msg.assign(buf.data());
-  return DS_SUCCESS;
+  cout << "* size of the vector: " << strs.size() << endl;    
+  for (size_t i = 0; i < strs.size(); i++)
+    cout << strs[i] << endl;
 }

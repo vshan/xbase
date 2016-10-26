@@ -1,66 +1,67 @@
+//
+// blocking_tcp_echo_client.cpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
-#include <string>
 #include <boost/asio.hpp>
 
-boost::asio::ip::tcp::socket *establishConn(std::string server_addr)
+using boost::asio::ip::tcp;
+
+enum { max_length = 1024 };
+
+tcp::socket *enable_connection(char *host, char *port)
 {
-  // boost::asio::io_service io_service;
-  // boost::asio::ip::tcp::resolver resolver(io_service);
-  // boost::asio::ip::tcp::resolver::query query(server_addr, "daytime");
-  // boost::asio::ip::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
-  // boost::asio::ip::tcp::socket *sock = new boost::asio::ip::tcp::socket(io_service);
-  // boost::asio::connect(*sock, endpoint_iterator);
-  boost::asio::io_service ios;
-  boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(server_addr), 1301);
-  boost::asio::ip::tcp::socket *sock = new boost::asio::ip::tcp::socket(ios);
-  sock->connect(endpoint);
-  return sock;
+  boost::asio::io_service io_service;
+
+  tcp::socket *s = new tcp::socket(io_service);
+  tcp::resolver resolver(io_service);
+  boost::asio::connect(*s, resolver.resolve({host, port}));
+  return s;
 }
 
-int sendTo(boost::asio::ip::tcp::socket &sock,
-           std::string send_msg)
+size_t writeRead(tcp::socket *s, char request[], char reply[])
 {
-  boost::array<char, 128> buf;
-  std::copy(send_msg.begin(),send_msg.end(),buf.begin());
-  boost::system::error_code error;
-  sock.write_some(boost::asio::buffer(buf, send_msg.size()), error);
-  return 0;
+  size_t request_length = std::strlen(request);
+    boost::asio::write(*s, boost::asio::buffer(request, request_length));
+
+  size_t reply_length = boost::asio::read(*s,
+        boost::asio::buffer(reply, request_length));
+
+  return reply_length;
 }
 
-int recvFrom(boost::asio::ip::tcp::socket &sock,
-             std::string &recv_msg)
+int main(int argc, char* argv[])
 {
-  boost::array<char, 128> buf;
-  boost::system::error_code error;
+  try
+  {
+    if (argc != 3)
+    {
+      std::cerr << "Usage: blocking_tcp_echo_client <host> <port>\n";
+      return 1;
+    }
 
-  size_t len = sock.read_some(boost::asio::buffer(buf), error);
+    tcp::socket *s = enable_connection(argv[1], argv[2]);
 
-  // if (error == boost::asio::error::eof)
-  //   break; // Connection closed cleanly by peer.
-  // else if (error)
-  //   throw boost::system::system_error(error); // Some other error.
+    std::cout << "Enter message: ";
+    char request[max_length], reply[max_length];
+    std::cin.getline(request, max_length);
+    size_t reply_length = writeRead(s, request, reply);
+    std::cout << "Reply is: ";
+    std::cout.write(reply, reply_length);
+    std::cout << "\n";
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << "Exception: " << e.what() << "\n";
+  }
 
-  recv_msg.assign(buf.data());
   return 0;
 }
-
-int rawSendRecv(std::string server_addr,
-                std::string send_msg,
-                std::string &recv_msg)
-{
-  boost::asio::ip::tcp::socket *sock = establishConn(server_addr);
-  sendTo(*sock, send_msg);
-  recvFrom(*sock, recv_msg);
-  return 0;
-}
-
-
-
-int main() {
-  std::string recv_msg;
-  std::string server_addr("localhost");
-  std::string send_msg("chela!");
-  rawSendRecv(server_addr, send_msg, recv_msg);
-  std::cout << "Recevied: " << recv_msg << std::endl;
-  return 0;
-} 
