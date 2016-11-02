@@ -466,6 +466,30 @@ StatusCode DS_BufferManager::getPage(char *ipAddr, char *port, char *fileName, i
   return DS_SUCCESS;
 }
 
+StatusCode DS_BufferManager::allocatePage(int fd, int pageNum, char **ppBuffer)
+{
+  StatusCode sc;
+  int slot;
+
+  if((ec = internalAlloc(slot)))
+    return ec;
+
+  if((ec = readPage(fd, pageNum, bufTable[slot].pData)))
+    return ec;
+
+  slot_map[make_pair(fd, pageNum)] = slot; // make a new entry in the hashMap
+  initPageDesc(fd, pageNum, slot); // initialize page description
+  *ppBuffer = bufTable[slot].pData;
+  return (ec = 0);
+}
+
+StatusCode DS_BufferManager::allocatePage(char *ipAddr, char *port, char *fileName, int pageNum, char **ppBuffer)
+{
+  rm->remoteAllocatePage(ipAddr, port, fileName, pageNum);
+  internalAlloc(slot);
+  readPage(ipAddr, port, fileName, pageNum, bufTable[slot].pData); 
+}
+
 StatusCode DS_BufferManager::markDirty(int fd, int pageNum)
 {
   StatusCode sc;

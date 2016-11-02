@@ -13,19 +13,19 @@ SysPage_FileHandle::~SysPage_FileHandle() // Default Destructor
 
 }
 
-ErrCode SysPage_PageHandle::getFirstPage(SysPage_PageHandle &pageHandle) // Get the first page of the file
+ErrCode SysPage_FileHandle::getFirstPage(SysPage_PageHandle &pageHandle) // Get the first page of the file
 {
   // Get next page from the (-1)th page i.e get the 0th indexed page
   return (getNextPage((int)-1),pageHandle);
 }
 
-ErrCode SysPage_PageHandle::getLastPage(SysPage_PageHandle &pageHandle) // Get the last page of the file
+ErrCode SysPage_FileHandle::getLastPage(SysPage_PageHandle &pageHandle) // Get the last page of the file
 {
   //get previous page from last + 1 page
   return (getPreviousPage((int)hdr.numPages,pageHandle));
 }
 
-ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHandle) // Get the succeeding page to the
+ErrCode SysPage_FileHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHandle) // Get the succeeding page to the
                                                                                      // given page number
 {
   int ec;    // error code
@@ -51,7 +51,7 @@ ErrCode SysPage_PageHandle::getNextPage(int pageNum, SysPage_PageHandle &pageHan
   return SYSPAGE_EOF;
 }
 
-ErrCode SysPage_PageHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pageHandle)
+ErrCode SysPage_FileHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pageHandle)
 {
   int ec; // Error code
 
@@ -76,7 +76,7 @@ ErrCode SysPage_PageHandle::getPreviousPage(int pageNum, SysPage_PageHandle &pag
   return SYSPAGE_EOF;
 }
 
-ErrCode SysPage_PageHandle::getThisPage(int pageNum, SysPage_PageHandle &pageHandle)
+ErrCode SysPage_FileHandle::getThisPage(int pageNum, SysPage_PageHandle &pageHandle)
 {
   int  ec;              // error code
   char *pageBuf;        // address of page in buffer pool
@@ -108,7 +108,7 @@ ErrCode SysPage_PageHandle::getThisPage(int pageNum, SysPage_PageHandle &pageHan
   return (SYSPAGE_INVALIDPAGE);
 }
 
-ErrCode SysPage_PageHandle::allocatePage(SysPage_PageHandle &pageHandle)
+ErrCode SysPage_FileHandle::allocatePage(SysPage_PageHandle &pageHandle)
 {
   int     ec,pageNum;
   char    *pageBuf;
@@ -161,7 +161,7 @@ ErrCode SysPage_PageHandle::allocatePage(SysPage_PageHandle &pageHandle)
   return (0);
 }
 
-ErrCode SysPage_PageHandle::disposePage(int pageNum)
+ErrCode SysPage_FileHandle::disposePage(int pageNum)
 {
   int     ec;
   char    *pageBuf;
@@ -206,7 +206,7 @@ ErrCode SysPage_PageHandle::disposePage(int pageNum)
   return (0);
 }
 
-ErrCode SysPage_PageHandle::markDirty(int pageNum)
+ErrCode SysPage_FileHandle::markDirty(int pageNum)
 {
   if (!isFileOpen)
      return (SYSPAGE_CLOSEDFILE);
@@ -218,7 +218,7 @@ ErrCode SysPage_PageHandle::markDirty(int pageNum)
   return (bufferMgr->markDirty(unixfd, pageNum));
 }
 
-ErrCode SysPage_PageHandle::unpinPage(int pageNum)
+ErrCode SysPage_FileHandle::unpinPage(int pageNum)
 {
   if (!isFileOpen)
      return (SYSPAGE_CLOSEDFILE);
@@ -230,7 +230,7 @@ ErrCode SysPage_PageHandle::unpinPage(int pageNum)
   return (bufferMgr->unpinPage(unixfd, pageNum));
 }
 
-ErrCode SysPage_PageHandle::isValidPageNum(int pageNum)
+ErrCode SysPage_FileHandle::isValidPageNum(int pageNum)
 {
   return (isFileOpen &&
         pageNum >= 0 &&

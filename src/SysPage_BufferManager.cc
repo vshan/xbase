@@ -75,7 +75,7 @@ ErrCode SysPage_BufferManager::allocatePage(int fd, int pageNum, char **ppBuffer
 
    slot_map[make_pair(fd, pageNum)] = slot; // make a new entry in the hashMap
    initPageDesc(fd, pageNum, slot); // initialize page description
-
+   *ppBuffer = bufTable[slot].pData;
    return (ec = 0);
 }
 
