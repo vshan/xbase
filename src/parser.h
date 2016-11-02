@@ -1,39 +1,80 @@
-/*
-    Parser Implementation Structure definitions
-*/
 
 #ifndef PARSER_H
 #define PARSER_H
 
-struct RelAttr {
-    char* relName; // relation name (may be NULL)
-    char* attrName; // attribute name
+#include <iostream>
+#include "xbase.h"
+#include "SysPage_Manager.h"
+//
+// Structure declarations and output functions
+//
+struct attrInfo{
+    char     *attrName;   /* attribute name       */
+    AttrType attrType;    /* type of attribute    */
+    int      attrLength;  /* length of attribute  */
 };
 
-struct Value {
-    AttrType type; // type - (int/float/string)
-    void* data; // this void pointer can be casted to appropriate "type"
+struct relAttr{
+    char     *relName;    // Relation name (may be NULL)
+    char     *attrName;   // Attribute name
+
+    // Print function
+    friend std::ostream &operator<<(std::ostream &s, const relAttr &ra);
 };
 
-struct Condition {
-    RelAttr lhsAttr; // left-hand side attribute
-    CompOp op;  // comparison operator
-    bool ifRhsIsAttr;   // TRUE if right-hand side is an attribute and not a value
-    RelAttr rhsAttr;      // right-hand side attribute if bRhsIsAttr = TRUE
-    Value   rhsValue;     // right-hand side value if bRhsIsAttr = FALSE
+struct aggRelAttr{
+    AggFun   func;
+    char     *relName;    // Relation name (may be NULL)
+    char     *attrName;   // Attribute name
+
+    // Print function
+    friend std::ostream &operator<<(std::ostream &s, const AggRelAttr &ra);
 };
 
-struct AttrInfo {
-    char* atrrName; // attribute name
-    AttrType attrType ; // attribute type
-    int attrlength; // attribute length
+struct value{
+    AttrType type;         /* type of value               */
+    void     *data;        /* value                       */
+			   /* print function              */
+    friend std::ostream &operator<<(std::ostream &s, const value &v);
 };
 
+<<<<<<< HEAD
 // used for Aggregate functions (	NO_F, MIN_F, MAX_F, COUNT_F,SUM_F, AVG_F)
-struct AffRelAttr {
+struct AggRelAttr {
     AggFun aggFunc; // aggregate function
     char* attrName; // attribute name
     char* relName; // relation name
+=======
+struct condition{
+    relAttr  lhsAttr;    /* left-hand side attribute            */
+    compOp   op;         /* comparison operator                 */
+    int      bRhsIsAttr; /* TRUE if the rhs is an attribute,    */
+                         /* in which case rhsAttr below is valid;*/
+                         /* otherwise, rhsValue below is valid.  */
+    relAttr  rhsAttr;    /* right-hand side attribute            */
+    value    rhsValue;   /* right-hand side value                */
+			 /* print function                               */
+    friend std::ostream &operator<<(std::ostream &s, const Condition &c);
+
+>>>>>>> 829167a080b91f2b24f381198154ed8ac74b95d8
 };
+
+//
+// Parse function
+//
+class Query_Manager;
+class SysMan_Manager;
+
+ErrCode RBparse(SysPage_Manager &pfm, SysMan_Manager &smm, Query_Manager &qlm);
+
+//
+// Error printing function; calls component-specific functions
+//
+void printError(ErrCode ec);
+
+// bQueryPlans is allocated by parse.y.  When bQueryPlans is 1 then the
+// query plan chosen for the SFW query will be displayed.  When
+// bQueryPlans is 0 then no query plan is shown.
+extern int isQueryPlans;
 
 #endif
