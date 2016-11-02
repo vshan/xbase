@@ -26,9 +26,9 @@ ErrCode Query_Manager::isValid() const
 /*
     SELECT Statement
 */
-ErrCode Select(int nSelAttrs,const RelAttr selAttrs_[],
-               int nRelations,const char* const relations_[],
-               int nConditions,const Condition conditions_[])
+ErrCode Query_Manager::select(int nSelAttrs,const RelAttr selAttrs_[],
+                              int nRelations,const char* const relations_[],
+                              int nConditions,const Condition conditions_[])
 {
     ErrCode invalid = isInvalid(); if(invalid) return invalid;
 
@@ -40,13 +40,13 @@ ErrCode Select(int nSelAttrs,const RelAttr selAttrs_[],
         selAttrs[i].attrName = selAttrs_[i].attrName;
     }
 
-    
+
 }
 
 /*
     INSERT Statement
 */
-ErrCode Insert()
+ErrCode Query_Manager::insert()
 {
 
 }
