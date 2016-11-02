@@ -7,11 +7,15 @@ public:
     ~Query_Manager(); // Destructor
 
     ErrCode Select(int nSelAttrs,        // # attrs in Select clause
-                   const RelAttr selAttrs[],       // attrs in Select clause
+                   const AggRelAttr selAttrs[],       // attrs in Select clause
                    int nRelations,       // # relations in From clause
                    const char * const relations[], // relations in From clause
                    int nConditions,      // # conditions in Where clause
-                   const Condition conditions[]);  // conditions in Where clause)
+                   const Condition conditions[],  // conditions in Where clause)
+                   int order,               // order from order clause
+                   RelAttr orderAttr,       // the single attribute ordered by
+                   bool group,              // group from group by clause
+                   RelAttr groupAttr);
 
     ErrCode Insert(const char* relName, // relation to insert into
                    int nValue, // number of values to insert

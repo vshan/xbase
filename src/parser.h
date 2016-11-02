@@ -30,7 +30,7 @@ struct AttrInfo {
 };
 
 // used for Aggregate functions (	NO_F, MIN_F, MAX_F, COUNT_F,SUM_F, AVG_F)
-struct AffRelAttr {
+struct AggRelAttr {
     AggFun aggFunc; // aggregate function
     char* attrName; // attribute name
     char* relName; // relation name

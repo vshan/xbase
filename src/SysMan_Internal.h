@@ -57,3 +57,45 @@ private:
 
 };
 #endif
+
+//
+// sm_error.h
+//
+
+
+#ifndef SYSMAN_ERROR_H
+#define SYSMAN_ERROR_H
+
+// #include "redbase.h"
+//
+// Print-error function
+//
+void SYSMAN_PrintError(RC rc);
+
+#define SYSMAN_KEYNOTFOUND    (START_SYSMAN_WARN + 0)  // cannot find key
+#define SYSMAN_INVALIDSIZE    (START_SYSMAN_WARN + 1)  // invalid entry size
+#define SYSMAN_ENTRYEXISTS    (START_SYSMAN_WARN + 2)  // key,rid already
+                                               // exists in index
+#define SYSMAN_NOSUCHENTRY    (START_SYSMAN_WARN + 3)
+
+#define SYSMAN_LASTWARN SYSMAN_NOSUCHENTRY
+
+
+#define SYSMAN_DBOPEN          (START_SYSMAN_ERR - 0)
+#define SYSMAN_NOSUCHDB        (START_SYSMAN_ERR - 1)
+#define SYSMAN_NOTOPEN         (START_SYSMAN_ERR - 2)
+#define SYSMAN_NOSUCHTABLE     (START_SYSMAN_ERR - 3)
+#define SYSMAN_BADOPEN         (START_SYSMAN_ERR - 4)
+#define SYSMAN_FNOTOPEN        (START_SYSMAN_ERR - 5)
+#define SYSMAN_BADATTR         (START_SYSMAN_ERR - 6)
+#define SYSMAN_BADTABLE        (START_SYSMAN_ERR - 7)
+#define SYSMAN_INDEXEXISTS     (START_SYSMAN_ERR - 8)
+#define SYSMAN_TYPEMISYSMANATCH    (START_SYSMAN_ERR - 9)
+#define SYSMAN_BADOP           (START_SYSMAN_ERR - 10)
+#define SYSMAN_AMBGATTR        (START_SYSMAN_ERR - 11)
+#define SYSMAN_BADPARAM        (START_SYSMAN_ERR - 12)
+#define SYSMAN_BADAGGFUN       (START_SYSMAN_ERR - 13)
+
+#define SYSMAN_LASTERROR SYSMAN_BADAGGFUN
+
+#endif // SYSMAN_ERROR_H
