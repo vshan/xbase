@@ -45,6 +45,9 @@ ErrCode Select(int nSelAttrs,const AggRelAttr selAttrs_[],
                int nConditions,const Condition conditions_[],
                int order, RelAttr orderAttr,
                bool group, RelAttr groupAttr)
+ErrCode Query_Manager::select(int nSelAttrs,const RelAttr selAttrs_[],
+                              int nRelations,const char* const relations_[],
+                              int nConditions,const Condition conditions_[])
 {
     ErrCode invalid = isInvalid(); if(invalid) return invalid;
 
@@ -273,7 +276,7 @@ ErrCode Select(int nSelAttrs,const AggRelAttr selAttrs_[],
 /*
     INSERT Statement
 */
-ErrCode Insert()
+ErrCode Query_Manager::insert()
 {
 
 }
