@@ -29,29 +29,165 @@ public:
   DS_Manager();
   ~DS_Manager();
   StatusCode createFile(const char *filename);
-  StatusCode loadFile(const char *filename, DS_FileH &fileHandle);
+  StatusCode loadFile(const char *filename, DS_FileHandle &fileHandle);
 private:
   DS_BufferManager *bm;
   DS_RemoteManager *rm;
 };
 
-class DS_FileH {
+class DS_FileHandle {
 public:
-  DS_FileH();
-  ~DS_FileH();
+  DS_FileHandle();
+  ~DS_FileHandle();
 
-  StatusCode getPage(int pageNum, DS_PageH &pageHandle);
-  StatusCode allocatePage(DS_PageH &pageHandle);
+  StatusCode getFirstPage(DS_PageHandle &pageHandle);
+  StatusCode getNextPage(int pageNum, DS_PageHandle &pageHandle);
+  StatusCode getThisPage(int pageNum, DS_PageHandle &pageHandle);
+  StatusCode getLastPage(DS_PageHandle &pageHandle);
+  StatusCode allocatePage(DS_PageHandle &pageHandle);
   StatusCode markDirty(int pageNum);
   StatusCode unpinPage(int pageNum);
 private:
   DS_BufferManager *bm;
   DS_RemoteManager *rm;
   DS_FileHeader hdr;
+  int unixfd;
   bool isRemote;
+  string fileName;
   string ipaddr;
   string port;
 };
+
+DS_FileHandle::DS_FileHandle()
+{
+  bm = NULL;
+  rm = NULL;
+}
+
+DS_FileHandle::~DS_FileHandle()
+{
+
+}
+
+StatusCode DS_FileHandle::getFirstPage(DS_PageHandle &pageHandle)
+{
+  return (getNextPage(-1, pageHandle));
+}
+
+StatusCode DS_FileHandle::getLastPage(DS_PageHandle &pageHandle)
+{
+  return (getPrevPage(hdr.numPages, pageHandle));
+}
+
+StatusCode DS_FileHandle::getNextPage(int pageNum, DS_PageHandle &pageHandle)
+{
+  StatusCode sc;
+  for (pageNum++; pageNum < hdr.numPages; pageNum++)
+  {
+    if (!(sc = getThisPage(pageNum, pageHandle)))
+      return (0);
+    
+    if (sc != DS_INVALIDPAGE)
+      return (sc);
+  }
+  return DS_EOF;
+}
+
+StatusCode DS_FileHandle::allocatePage(DS_PageHandle &pageHandle)
+{
+  StatusCode sc;
+  int pageNum;
+  char *pPageBuf;
+
+  if (hdr.firstFree != DS_PAGE_LIST_END) {
+    pageNum = hdr.firstFree;
+
+    if (isRemote) {
+      bm->getPage(ipaddr.c_str(), port.c_str(),
+        fileName.c_str(), pageNum, &pPageBuf);
+    }
+    else {
+      bm->getPage(unixfd, pageNum, &pPageBuf);
+    }
+
+    hdr.firstFree = pageNum+1;
+
+  }
+  else {
+    // free list is empty
+    pageNum = hdr.numPages;
+
+    if (isRemote) {
+      bm->allocatePage(ipaddr.c_str(), port.c_str(),
+           fileName.c_str(), pageNum, &pPageBuf);
+    }
+    else {
+      bm->allocatePage(unixfd, pageNum, &pPageBuf);
+    }
+
+    hdr.numPages++;
+  }
+
+  isHdrChanged = TRUE;
+  memset(pPageBuf, 0, DS_PAGE_SIZE);
+
+  markDirty(pageNum);
+
+  pageHandle.pageNum = pageNum;
+  pageHandle.pPageData = pPageBuf;
+
+  return 0;
+}
+
+StatusCode DS_FileHandle::getPrevPage(int pageNum, DS_PageHandle &pageHandle)
+{
+  StatusCode sc;
+  for (pageNum--; pageNum >= 0; pageNum--)
+  {
+    if (!(sc = getThisPage(pageNum, pageHandle)))
+      return (0);
+    
+    if (sc != DS_INVALIDPAGE)
+      return (sc);
+  }
+  return DS_EOF;
+}
+
+StatusCode DS_FileHandle::getThisPage(int pageNum, DS_PageHandle &pageHandle)
+{
+  char msg_con[DS_BUF_SIZE];
+  if (isRemote) {
+    bm->getPage(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum, msg_con);
+  }
+  else {
+    bm->getPage(unixfd, pageNum, msg_con);
+  }
+
+  pageHandle.pageNum = pageNum;
+  pageHandle.pPageData = msg_con;
+
+  return DS_SUCCESS;
+}
+
+StatusCode DS_FileHandle::markDirty(int pageNum)
+{
+  if (isRemote)
+    bm->markDirty(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum);
+  else
+    bm->markDirty(unixfd, pageNum);
+
+  return DS_SUCCESS;
+}
+
+StatusCode DS_FileHandle::unpinPage(int pageNum)
+{
+  if (isRemote)
+    bm->unpinPage(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum);
+  else
+    bm->unpinPage(unixfd, pageNum);
+
+  return DS_SUCCESS;
+}
 
 class DS_RemoteManager {
 public:
@@ -75,6 +211,8 @@ public:
   StatusCode makeProtoHelper(int status_code, void *value1, 
                              void *value2, char msg[]);
   StatusCode parseProtocolMsg(string msg, ProtocolParseObj &ppo);
+  void server(boost::asio::io_service& io_service, unsigned short port);
+  void session(boost::asio::ip::tcp::socket sock);
 };
 
 struct DS_BufPageDesc {
@@ -328,6 +466,11 @@ StatusCode DS_RemoteManager::makeProtocolMsg(int proto_type, void *value1,
     memcpy((void *)msg, (void *)s.c_str(), s.size());
     msg[s.size()] = '\0'; 
   }
+  // 80|PageNum|FileName
+  else if (proto_type == DS_PROTO_ALLOC_PAGE)
+  {
+    makeProtoHelper(DS_PROTO_ALLOC_PAGE_CODE, value1, value2, msg);
+  }
   return DS_SUCCESS;
 }
 
@@ -378,6 +521,43 @@ StatusCode DS_RemoteManager::parseProtocolMsg(string msg, ProtocolParseObj &ppo)
   }
 
   return DS_SUCCESS;
+}
+
+
+void DS_RemoteManager::session(boost::asio::ip::tcp::socket sock)
+{
+  try
+  {
+    for (;;)
+    {
+      char data[max_length];
+
+      boost::system::error_code error;
+      size_t length = sock.read_some(boost::asio::buffer(data), error);
+      if (error == boost::asio::error::eof)
+        break; // Connection closed cleanly by peer.
+      else if (error)
+        throw boost::system::system_error(error); // Some other error.
+
+      boost::asio::write(sock, boost::asio::buffer(data, length));
+    }
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << "Exception in thread: " << e.what() << "\n";
+  }
+}
+
+void DS_RemoteManager::server(boost::asio::io_service& io_service, unsigned short port)
+{
+  boost::asio::ip::tcp::acceptor a(io_service, 
+    boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port));
+  for (;;)
+  {
+    boost::asio::ip::tcp::socket sock(io_service);
+    a.accept(sock);
+    std::thread(session, std::move(sock)).detach();
+  }
 }
 
 DS_BufferManager::DS_BufferManager(int numPages, DS_RemoteManager *rem_mgr)

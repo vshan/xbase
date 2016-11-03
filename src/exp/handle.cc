@@ -21,18 +21,28 @@ private:
   string port;
 };
 
+DS_FileHandle::DS_FileHandle()
+{
+  bm = NULL;
+  rm = NULL;
+}
 
-StatusCode getFirstPage(DS_PageHandle &pageHandle)
+DS_FileHandle::~DS_FileHandle()
+{
+
+}
+
+StatusCode DS_FileHandle::getFirstPage(DS_PageHandle &pageHandle)
 {
   return (getNextPage(-1, pageHandle));
 }
 
-StatusCode getLastPage(DS_PageHandle &pageHandle)
+StatusCode DS_FileHandle::getLastPage(DS_PageHandle &pageHandle)
 {
   return (getPrevPage(hdr.numPages, pageHandle));
 }
 
-StatusCode getNextPage(int pageNum, DS_PageHandle &pageHandle)
+StatusCode DS_FileHandle::getNextPage(int pageNum, DS_PageHandle &pageHandle)
 {
   StatusCode sc;
   for (pageNum++; pageNum < hdr.numPages; pageNum++)
@@ -46,7 +56,53 @@ StatusCode getNextPage(int pageNum, DS_PageHandle &pageHandle)
   return DS_EOF;
 }
 
-StatusCode getPrevPage(int pageNum, DS_PageHandle &pageHandle)
+StatusCode DS_FileHandle::allocatePage(DS_PageHandle &pageHandle)
+{
+  StatusCode sc;
+  int pageNum;
+  char *pPageBuf;
+
+  if (hdr.firstFree != DS_PAGE_LIST_END) {
+    pageNum = hdr.firstFree;
+
+    if (isRemote) {
+      bm->getPage(ipaddr.c_str(), port.c_str(),
+        fileName.c_str(), pageNum, &pPageBuf);
+    }
+    else {
+      bm->getPage(unixfd, pageNum, &pPageBuf);
+    }
+
+    hdr.firstFree = pageNum+1;
+
+  }
+  else {
+    // free list is empty
+    pageNum = hdr.numPages;
+
+    if (isRemote) {
+      bm->allocatePage(ipaddr.c_str(), port.c_str(),
+           fileName.c_str(), pageNum, &pPageBuf);
+    }
+    else {
+      bm->allocatePage(unixfd, pageNum, &pPageBuf);
+    }
+
+    hdr.numPages++;
+  }
+
+  isHdrChanged = TRUE;
+  memset(pPageBuf, 0, DS_PAGE_SIZE);
+
+  markDirty(pageNum);
+
+  pageHandle.pageNum = pageNum;
+  pageHandle.pPageData = pPageBuf;
+
+  return 0;
+}
+
+StatusCode DS_FileHandle::getPrevPage(int pageNum, DS_PageHandle &pageHandle)
 {
   StatusCode sc;
   for (pageNum--; pageNum >= 0; pageNum--)
