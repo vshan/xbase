@@ -1,26 +1,3 @@
-class DS_FileHandle {
-public:
-  DS_FileHandle();
-  ~DS_FileHandle();
-
-  StatusCode getFirstPage(DS_PageHandle &pageHandle);
-  StatusCode getNextPage(int pageNum, DS_PageHandle &pageHandle);
-  StatusCode getThisPage(int pageNum, DS_PageHandle &pageHandle);
-  StatusCode getLastPage(DS_PageHandle &pageHandle);
-  StatusCode allocatePage(DS_PageHandle &pageHandle);
-  StatusCode markDirty(int pageNum);
-  StatusCode unpinPage(int pageNum);
-private:
-  DS_BufferManager *bm;
-  DS_RemoteManager *rm;
-  DS_FileHeader hdr;
-  int unixfd;
-  bool isRemote;
-  string fileName;
-  string ipaddr;
-  string port;
-};
-
 DS_FileHandle::DS_FileHandle()
 {
   bm = NULL;
@@ -116,7 +93,7 @@ StatusCode DS_FileHandle::getPrevPage(int pageNum, DS_PageHandle &pageHandle)
   return DS_EOF;
 }
 
-StatusCode getThisPage(int pageNum, DS_PageHandle &pageHandle)
+StatusCode DS_FileHandle::getThisPage(int pageNum, DS_PageHandle &pageHandle)
 {
   char msg_con[DS_BUF_SIZE];
   if (isRemote) {
@@ -132,7 +109,7 @@ StatusCode getThisPage(int pageNum, DS_PageHandle &pageHandle)
   return DS_SUCCESS;
 }
 
-StatusCode markDirty(int pageNum)
+StatusCode DS_FileHandle::markDirty(int pageNum)
 {
   if (isRemote)
     bm->markDirty(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum);
@@ -142,7 +119,7 @@ StatusCode markDirty(int pageNum)
   return DS_SUCCESS;
 }
 
-StatusCode unpinPage(int pageNum)
+StatusCode DS_FileHandle::unpinPage(int pageNum)
 {
   if (isRemote)
     bm->unpinPage(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum);
