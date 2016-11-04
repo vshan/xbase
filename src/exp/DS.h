@@ -7,6 +7,9 @@
 
 using namespace std;
 
+#ifndef DS_H
+#define DS_H
+
 typedef int StatusCode;
 
 struct DS_FileHeader {
@@ -83,6 +86,8 @@ public:
   StatusCode parseProtocolMsg(string msg, ProtocolParseObj &ppo);
   void server(boost::asio::io_service& io_service, unsigned short port);
   void session(boost::asio::ip::tcp::socket sock);
+private:
+  DS_BufferManager *bm;
 };
 
 struct DS_BufPageDesc {
@@ -99,8 +104,7 @@ struct DS_BufPageDesc {
   bool isRemote;
 };
 
-class DS_BufferManager
-{
+class DS_BufferManager {
 public:
   DS_BufferManager(int numPages);
   ~DS_BufferManager();
@@ -134,3 +138,18 @@ private:
   int last;
   int free;
 };
+
+class DS_PageHandle {
+  friend class DS_FileHandle;
+public:
+   DS_PageHandle();
+   ~DS_PageHandle();
+
+   StatusCode getData(char* &pData);
+   StatusCode getPageNum(int &pageNum);
+private:
+   int pageNumber;
+   char *pageData;
+};
+
+#endif

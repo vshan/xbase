@@ -1,3 +1,5 @@
+#include "DS.h"
+
 DS_FileHandle::DS_FileHandle()
 {
   bm = NULL;

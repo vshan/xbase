@@ -1,3 +1,5 @@
+#include "DS.h"
+
 StatusCode DS_RemoteManager::remoteLoadFile(const char *fileName,
                                             DS_FileH &fileHandle)
 {
@@ -103,6 +105,7 @@ StatusCode DS_RemoteManager::makeProtocolMsg(int proto_type, void *value1,
   else if (proto_type == DS_PROTO_WRITE_PAGE)
   {
     makeProtoHelper(DS_PROTO_WRITE_PAGE_CODE, value1, value2, msg);
+    strcat(msg, "|");
     strcat(msg, (char *)value3);
   }
   // 70|FileName
@@ -181,6 +184,7 @@ void DS_RemoteManager::session(boost::asio::ip::tcp::socket sock)
     for (;;)
     {
       char data[max_length];
+      char reply_msg[max_length];
 
       boost::system::error_code error;
       size_t length = sock.read_some(boost::asio::buffer(data), error);
@@ -188,14 +192,85 @@ void DS_RemoteManager::session(boost::asio::ip::tcp::socket sock)
         break; // Connection closed cleanly by peer.
       else if (error)
         throw boost::system::system_error(error); // Some other error.
-
-      boost::asio::write(sock, boost::asio::buffer(data, length));
+      
+      ProtocolParseObj ppo;
+      parseIncomingMsg(data, ppo);
+      handleProtoReq(ppo, reply_msg);
+      boost::asio::write(sock, boost::asio::buffer(reply_msg, length));
     }
   }
   catch (std::exception& e)
   {
     std::cerr << "Exception in thread: " << e.what() << "\n";
   }
+}
+
+StatusCode DS_RemoteManager::parseIncomingMsg(char *msg, ProtocolParseObj &ppo)
+{
+  vector<string> strs;
+  boost::split(strs,msg,boost::is_any_of("|"));
+
+  cout << "* size of the vector: " << strs.size() << endl;    
+  for (size_t i = 0; i < strs.size(); i++)
+    cout << strs[i] << endl;
+
+  // 50|PageNum|FileName
+  // 60|PageNum|FileName|PageContents
+  // 70|FileName
+  // 80|PageNum|FileName
+
+  ppo.code = std::atoi(strs[0]);
+  if (code == 70)
+    memcpy((void *)ppo.fileName, (void *)strs[1].c_str(), strs[1].size());
+  else {
+    ppo.pageNum = std::atoi(strs[1]);
+    memcpy((void *)ppo.fileName, (void *)strs[2].c_str(), strs[2].size());
+  }
+
+  if (code == 60)
+    memcpy((void *)ppo.pageContents, (void *)strs[3].c_str(), strs[3].size());
+
+  return DS_SUCCESS;
+}
+
+StatusCode DS_RemoteManager::handleProtoReq(ProtocolParseObj &ppo, char repbuf[])
+{
+  // 50|PageNum|FileName
+  // 60|PageNum|FileName|PageContents
+  // 70|FileName
+  // 80|PageNum|FileName
+
+  // 51|PageNum|FileName|PageContents
+  // 61|PageNum|FileName
+  // 71|Port|FileName|IP
+  // 81|PageNum|FileName
+
+  char contents[DS_CHAR_BUF_SIZE];
+  int fd;
+
+  if (ppo.code == 50) {
+    // open file to get fd
+    fd = open(ppo.fileName, O_BINARY | O_CREAT | O_RDONLY);
+    bm->readPage(fd, ppo.pageNum, contents);
+    makeProtoHelper(DS_SUCC_REM_READ_CODE, ppo.pageNum, ppo.fileName, repbuf);
+    strcat(repbuf, "|");
+    strcat(repbuf, contents);
+    close(fd);
+  }
+
+  if (ppo.code == 60) {
+    // open file to get fd
+    fd = open(ppo.fileName, O_BINARY | O_CREAT | O_RDONLY);
+    bm->writePage(fd, ppo.pageNum, ppo.pageContents);
+    makeProtoHelper(DS_SUCC_REM_WRI_CODE, ppo.pageNum, ppo.fileName, repbuf);
+    close(fd);
+  }
+
+  if (ppo.code == 81) {
+    // allocate page..
+  }
+
+  return DS_SUCCESS;
 }
 
 void DS_RemoteManager::server(boost::asio::io_service& io_service, unsigned short port)
@@ -208,4 +283,10 @@ void DS_RemoteManager::server(boost::asio::io_service& io_service, unsigned shor
     a.accept(sock);
     std::thread(session, std::move(sock)).detach();
   }
+}
+
+void DS_RemoteManager::spawnServer(unsigned short port)
+{
+  boost::asio::io_service io_service;
+  server(io_service, port);
 }

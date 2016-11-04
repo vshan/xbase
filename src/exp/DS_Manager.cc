@@ -1,7 +1,11 @@
+#include "DS.h"
+
 DS_Manager::DS_Manager()
 {
   bm = new DS_BufferManager();
   rm = new DS_RemoteManager();
+  bm->rm = rm;
+  rm->bm = bm;
 }
 
 DS_Manager::~DS_Manager()
@@ -38,7 +42,7 @@ StatusCode DS_Manager::createFile(const char *fileName)
 }
 
 StatusCode DS_Manager::loadFile(const char *fileName,
-                                DS_FileH &fileHandle)
+                                DS_FileHandle &fileHandle)
 {
   StatusCode sc;
   if (fileName == NULL) {
@@ -53,6 +57,7 @@ StatusCode DS_Manager::loadFile(const char *fileName,
     file.close();
     fileHandle.rm = rm;
     fileHandle.bm = bm;
+    fileHandle.unixfd = open(fileName, O_BINARY | O_RDWR);
     sc = DS_SUCCESS;
   }
   else {

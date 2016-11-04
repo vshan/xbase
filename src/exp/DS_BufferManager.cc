@@ -1,3 +1,5 @@
+#include "DS.h"
+
 DS_BufferManager::DS_BufferManager(int numPages, DS_RemoteManager *rem_mgr)
 {
   this->numPages = numPages;
@@ -382,7 +384,7 @@ StatusCode DS_BufferManager::writePage(int fd, int pageNum, char *source)
   StatusCode sc;
 
     // seek to the appropriate place (cast to long for PC's)
-  long offset = pageNum*pageSize; //+ SYSPAGE_FILE_HDR_SIZE;
+  long offset = pageNum*pageSize + DS_FILE_HDR_SIZE;
 
   if(lseek(fd, offset, L_SET) <0)
     return DS_UNIX;
@@ -411,7 +413,7 @@ StatusCode DS_BufferManager::writePage(char *ipAddr, char *port, char *fileName,
 StatusCode DS_BufferManager::readPage(int fd, int pageNum, char *dest)
 {
   StatusCode sc;
-  long offset = pageNum*pageSize;// + SYSPAGE_FILE_HDR_SIZE;
+  long offset = pageNum*pageSize + DS_FILE_HDR_SIZE;
 
   if(lseek(fd, offset, L_SET) < 0)
     return DS_UNIX;
