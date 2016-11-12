@@ -77,7 +77,7 @@ StatusCode DS_Manager::loadFile(char *fileName,
     string headerContent;
     sc = rm->getRemoteHeaderFile(fileName, headerContent);
     fileHandle.isRemote = true;
-    fileHandle.hdr.firstFree = atoi(strdup(headerContent.c_str()));
+    memcpy((void *)&fileHandle.hdr, (void *)headerContent.c_str(), DS_FILE_HDR_SIZE);
   }
   fileHandle.rm = this->rm;
   fileHandle.bm = this->bm;

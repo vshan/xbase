@@ -1,8 +1,5 @@
 using namespace std;
 
-#ifndef DS_H
-#define DS_H
-
 #define DS_SUCCESS 0
 #define DS_SMALL_BUF_SIZE 1028
 #define DS_NOBUF 2
@@ -15,25 +12,24 @@ using namespace std;
 #define DS_UNPINNED_PAGE 5
 #define DS_CHAR_BUF_SIZE 8192
 #define DS_PROTO_NAME_REQ 6
-#define DS_PROTO_NAME_REQ_CODE 7
+#define DS_PROTO_NAME_REQ_CODE 70
 #define DS_NAME_SERVER 8
 #define DS_NAME_SERVER_PORT "6000"
 #define DS_PROTO_LOAD_PAGE 10
-#define DS_PROTO_LOAD_PAGE_CODE 11
+#define DS_PROTO_LOAD_PAGE_CODE 50
 #define DS_PROTO_WRITE_PAGE 12 
-#define DS_PROTO_WRITE_PAGE_CODE 13
+#define DS_PROTO_WRITE_PAGE_CODE 60
 #define DS_REMOTE_WRITE_ERROR 14
 #define DS_PROTO_ALLOC_PAGE 15
 #define DS_PROTO_ALLOC_PAGE_CODE 16
 #define DS_SUCC_REM_READ_CODE 17
 #define DS_SUCC_REM_WRI_CODE 18
-#define DS_FILE_HDR_SIZE 19
 #define DS_UNIX 20
 #define DS_INCOMPLETEREAD 21
 #define DS_INCOMPLETEWRITE 22
 #define DS_INVALID_SLOT (-1)
 #define DS_INVALID_PAGE (-5)
-#define DS_END_FILE (-1)
+#define DS_END_FILE (-27)
 #define DS_EOF (-2)
 #define DS_BFRMGR_NUMPAGES 40
 
@@ -44,6 +40,8 @@ struct DS_FileHeader {
   int firstFree;
   int numPages;
 };
+
+const int DS_FILE_HDR_SIZE = sizeof(DS_FileHeader);
 
 struct ProtocolParseObj
 {
@@ -93,8 +91,8 @@ public:
   StatusCode handleProtoReq(ProtocolParseObj &ppo, char repbuf[]);
   StatusCode getLocalPage(int fd, int pageNum, char *dest);
   StatusCode setLocalPage(int fd, int pageNum, char *source);
-  void spawnServer(unsigned short port);
   void server(boost::asio::io_service& io_service, unsigned short port);
+  static void spawnServer(unsigned short port, DS_RemoteManager *window);
   static void session(DS_RemoteManager *window, boost::asio::ip::tcp::socket sock);
 };
 
@@ -183,9 +181,7 @@ public:
   ~DS_Manager();
   StatusCode createFile(char *filename);
   StatusCode loadFile(char *filename, DS_FileHandle &fileHandle);
-private:
+// private:
   DS_BufferManager *bm;
   DS_RemoteManager *rm;
 };
-
-#endif

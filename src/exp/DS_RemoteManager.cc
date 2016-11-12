@@ -15,6 +15,16 @@
 
 using namespace std;
 
+DS_RemoteManager::DS_RemoteManager()
+{
+
+}
+
+DS_RemoteManager::~DS_RemoteManager()
+{
+  
+}
+
 StatusCode DS_RemoteManager::getRemoteHeaderFile(char *fileName,
                                                  string &header_content)
 {
@@ -30,8 +40,8 @@ StatusCode DS_RemoteManager::getRemoteHeaderFile(char *fileName,
   //parse_msg(recv_msg, parse_obj);
   //header_content = parse_obj->value;
   memset(recv_msg, 0, DS_CHAR_BUF_SIZE);
-  getRemotePage(ppo.ipAddr, ppo.port, fileName, 1, recv_msg);
-  header_content.copy(recv_msg, strlen(recv_msg));
+  getRemotePage(ppo.ipAddr, ppo.port, fileName, 0, recv_msg);
+  header_content.copy(recv_msg, DS_FILE_HDR_SIZE);
   return DS_SUCCESS;
 }
 
@@ -55,11 +65,11 @@ boost::asio::ip::tcp::socket* DS_RemoteManager::enableConnection(char *host, cha
 
 size_t DS_RemoteManager::writeRead(boost::asio::ip::tcp::socket *s, char request[], char reply[])
 {
+  boost::system::error_code error;
   size_t request_length = std::strlen(request);
     boost::asio::write(*s, boost::asio::buffer(request, request_length));
 
-  size_t reply_length = boost::asio::read(*s,
-        boost::asio::buffer(reply, request_length));
+  size_t reply_length = s->read_some(boost::asio::buffer(reply, request_length), error);
 
   return reply_length;
 }
@@ -282,10 +292,10 @@ void DS_RemoteManager::server(boost::asio::io_service& io_service, unsigned shor
   }
 }
 
-void DS_RemoteManager::spawnServer(unsigned short port)
+void DS_RemoteManager::spawnServer(unsigned short port, DS_RemoteManager *window)
 {
   boost::asio::io_service io_service;
-  server(io_service, port);
+  window->server(io_service, port);
 }
 
 StatusCode DS_RemoteManager::getLocalPage(int fd, int pageNum, char *dest)
