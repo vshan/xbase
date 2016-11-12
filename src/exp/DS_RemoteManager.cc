@@ -1,22 +1,28 @@
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <cstdlib>
+#include <thread>
+#include <utility>
+#include <stdlib.h>
+#include <fcntl.h>   /* For O_RDWR */
+#include <unistd.h>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>                                                                                                                                                
+#include <boost/asio.hpp>
+#include <string>
 #include "DS.h"
 
-StatusCode DS_RemoteManager::remoteLoadFile(const char *fileName,
-                                            DS_FileH &fileHandle)
-{
-  string file_header;
-  getRemoteHeaderFile(fileName, file_header);
-  fileHandle.isRemote = true;
-  fileHandle.hdr = strdup(file_header.c_str());
-  return DS_SUCCESS;
-}
+using namespace std;
 
-StatusCode DS_RemoteManager::getRemoteHeaderFile(const char *fileName,
+StatusCode DS_RemoteManager::getRemoteHeaderFile(char *fileName,
                                                  string &header_content)
 {
   char recv_msg[DS_CHAR_BUF_SIZE], proto_msg[DS_CHAR_BUF_SIZE];
   memset(recv_msg, 0, DS_CHAR_BUF_SIZE);
-  
-  makeProtocolMsg(DS_PROTO_NAME_REQ, fileName, proto_msg);
+  int *n = new int;
+  *n = 0;
+  makeProtocolMsg(DS_PROTO_NAME_REQ, (void *)n, (void *)fileName, NULL, proto_msg);
   //sendrecvFrom(DS_NAME_SERVER, proto_msg, recv_msg);
   rawSendRecv("127.0.0.1", DS_NAME_SERVER_PORT, proto_msg, recv_msg);
   ProtocolParseObj ppo;
@@ -25,16 +31,7 @@ StatusCode DS_RemoteManager::getRemoteHeaderFile(const char *fileName,
   //header_content = parse_obj->value;
   memset(recv_msg, 0, DS_CHAR_BUF_SIZE);
   getRemotePage(ppo.ipAddr, ppo.port, fileName, 1, recv_msg);
-  header_content(recv_msg);
-  return DS_SUCCESS;
-}
-
-StatusCode DS_RemoteManager::sendRecvFrom(int server_code, string send_msg,
-                                                           string &recv_msg)
-{
-  boost::asio::ip::tcp::socket sock;
-  pair<char *, char *> p = servers[server_code];
-  rawSendRecv(p.first, p.second, send_msg, recv_msg);
+  header_content.copy(recv_msg, strlen(recv_msg));
   return DS_SUCCESS;
 }
 
@@ -50,13 +47,13 @@ boost::asio::ip::tcp::socket* DS_RemoteManager::enableConnection(char *host, cha
 {
   boost::asio::io_service io_service;
 
-  tcp::socket *s = new tcp::socket(io_service);
-  tcp::resolver resolver(io_service);
+  boost::asio::ip::tcp::socket *s = new boost::asio::ip::tcp::socket(io_service);
+  boost::asio::ip::tcp::resolver resolver(io_service);
   boost::asio::connect(*s, resolver.resolve({host, port}));
   return s;
 }
 
-size_t DS_RemoteManager::writeRead(tcp::socket *s, char request[], char reply[])
+size_t DS_RemoteManager::writeRead(boost::asio::ip::tcp::socket *s, char request[], char reply[])
 {
   size_t request_length = std::strlen(request);
     boost::asio::write(*s, boost::asio::buffer(request, request_length));
@@ -149,16 +146,16 @@ StatusCode DS_RemoteManager::parseProtocolMsg(string msg, ProtocolParseObj &ppo)
   // 61|PageNum|FileName
   // 71|Port|FileName|IP
   vector<string> strs;
-  boost::split(strs,msg,boost::is_any_of("|"));
+  boost::algorithm::split(strs,msg,boost::is_any_of("|"));
 
   cout << "* size of the vector: " << strs.size() << endl;    
   for (size_t i = 0; i < strs.size(); i++)
     cout << strs[i] << endl;
   
-  ppo.code = std::atoi(strs[0]);
+  ppo.code = std::atoi(strs[0].c_str());
   memcpy((void *)ppo.fileName, (void *)strs[2].c_str(), strs[2].size());
   ppo.fileName[strs[2].size()] = '\0';
-  
+  int code = ppo.code;
   if (code == 71) {
     memcpy((void *)ppo.port, (void *)strs[1].c_str(), strs[1].size());
     ppo.port[strs[1].size()] = '\0';
@@ -166,23 +163,21 @@ StatusCode DS_RemoteManager::parseProtocolMsg(string msg, ProtocolParseObj &ppo)
     ppo.port[strs[3].size()] = '\0';
   }
   else { 
-    ppo.pageNum = std::atoi(strs[1]);
+    ppo.pageNum = std::atoi(strs[1].c_str());
     if (code == 51)
       memcpy((void *)ppo.pageContents, (void *)strs[3].c_str(), strs[3].size());
-    else
-      ppo.pageContents = NULL;
   }
 
   return DS_SUCCESS;
 }
 
-
-void DS_RemoteManager::session(boost::asio::ip::tcp::socket sock)
+void DS_RemoteManager::session(DS_RemoteManager *window, boost::asio::ip::tcp::socket sock)
 {
   try
   {
     for (;;)
     {
+      const int max_length = DS_CHAR_BUF_SIZE;
       char data[max_length];
       char reply_msg[max_length];
 
@@ -194,8 +189,8 @@ void DS_RemoteManager::session(boost::asio::ip::tcp::socket sock)
         throw boost::system::system_error(error); // Some other error.
       
       ProtocolParseObj ppo;
-      parseIncomingMsg(data, ppo);
-      handleProtoReq(ppo, reply_msg);
+      window->parseIncomingMsg(data, ppo);
+      window->handleProtoReq(ppo, reply_msg);
       boost::asio::write(sock, boost::asio::buffer(reply_msg, length));
     }
   }
@@ -208,7 +203,7 @@ void DS_RemoteManager::session(boost::asio::ip::tcp::socket sock)
 StatusCode DS_RemoteManager::parseIncomingMsg(char *msg, ProtocolParseObj &ppo)
 {
   vector<string> strs;
-  boost::split(strs,msg,boost::is_any_of("|"));
+  boost::algorithm::split(strs,msg, boost::is_any_of("|"));
 
   cout << "* size of the vector: " << strs.size() << endl;    
   for (size_t i = 0; i < strs.size(); i++)
@@ -219,11 +214,12 @@ StatusCode DS_RemoteManager::parseIncomingMsg(char *msg, ProtocolParseObj &ppo)
   // 70|FileName
   // 80|PageNum|FileName
 
-  ppo.code = std::atoi(strs[0]);
+  ppo.code = std::atoi(strs[0].c_str());
+  int code = ppo.code;
   if (code == 70)
     memcpy((void *)ppo.fileName, (void *)strs[1].c_str(), strs[1].size());
   else {
-    ppo.pageNum = std::atoi(strs[1]);
+    ppo.pageNum = std::atoi(strs[1].c_str());
     memcpy((void *)ppo.fileName, (void *)strs[2].c_str(), strs[2].size());
   }
 
@@ -250,9 +246,9 @@ StatusCode DS_RemoteManager::handleProtoReq(ProtocolParseObj &ppo, char repbuf[]
 
   if (ppo.code == 50) {
     // open file to get fd
-    fd = open(ppo.fileName, O_BINARY | O_CREAT | O_RDONLY);
-    bm->readPage(fd, ppo.pageNum, contents);
-    makeProtoHelper(DS_SUCC_REM_READ_CODE, ppo.pageNum, ppo.fileName, repbuf);
+    fd = open(ppo.fileName, O_CREAT | O_RDONLY);
+    getLocalPage(fd, ppo.pageNum, contents);
+    makeProtoHelper(DS_SUCC_REM_READ_CODE, (void *)(&ppo.pageNum), ppo.fileName, repbuf);
     strcat(repbuf, "|");
     strcat(repbuf, contents);
     close(fd);
@@ -260,9 +256,9 @@ StatusCode DS_RemoteManager::handleProtoReq(ProtocolParseObj &ppo, char repbuf[]
 
   if (ppo.code == 60) {
     // open file to get fd
-    fd = open(ppo.fileName, O_BINARY | O_CREAT | O_RDONLY);
-    bm->writePage(fd, ppo.pageNum, ppo.pageContents);
-    makeProtoHelper(DS_SUCC_REM_WRI_CODE, ppo.pageNum, ppo.fileName, repbuf);
+    fd = open(ppo.fileName, O_CREAT | O_RDONLY);
+    setLocalPage(fd, ppo.pageNum, ppo.pageContents);
+    makeProtoHelper(DS_SUCC_REM_WRI_CODE, (void *)(&ppo.pageNum), (void *)ppo.fileName, repbuf);
     close(fd);
   }
 
@@ -281,7 +277,8 @@ void DS_RemoteManager::server(boost::asio::io_service& io_service, unsigned shor
   {
     boost::asio::ip::tcp::socket sock(io_service);
     a.accept(sock);
-    std::thread(session, std::move(sock)).detach();
+    DS_RemoteManager *window = this;
+    std::thread(session, window, std::move(sock)).detach();
   }
 }
 
@@ -289,4 +286,44 @@ void DS_RemoteManager::spawnServer(unsigned short port)
 {
   boost::asio::io_service io_service;
   server(io_service, port);
+}
+
+StatusCode DS_RemoteManager::getLocalPage(int fd, int pageNum, char *dest)
+{
+  StatusCode sc;
+  int pageSize = DS_PAGE_SIZE;
+  long offset = pageNum*pageSize + DS_FILE_HDR_SIZE;
+
+  if(lseek(fd, offset, L_SET) < 0)
+    return DS_UNIX;
+
+  // read the data
+  int numBytes = read(fd, dest, pageSize);
+  if(numBytes < 0)
+    return DS_UNIX;
+  if(numBytes!=pageSize)
+    return DS_INCOMPLETEREAD;
+
+  return (sc = 0);
+}
+
+StatusCode DS_RemoteManager::setLocalPage(int fd, int pageNum, char *source)
+{
+  StatusCode sc;
+
+    // seek to the appropriate place (cast to long for PC's)
+  int pageSize = DS_PAGE_SIZE;
+  long offset = pageNum*pageSize + sizeof(DS_FileHeader);
+
+  if(lseek(fd, offset, L_SET) <0)
+    return DS_UNIX;
+
+    // write the data
+  int numBytes = write(fd, source, pageSize);
+  if(numBytes < 0)
+    return DS_UNIX;
+  if(numBytes!=pageSize)
+    return DS_INCOMPLETEWRITE;
+
+  return (sc = 0);
 }

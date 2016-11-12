@@ -1,11 +1,24 @@
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <cstdlib>
+#include <thread>
+#include <utility>
+#include <stdlib.h>
+#include <fcntl.h>   /* For O_RDWR */
+#include <unistd.h>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>                                                                                                                                                
+#include <boost/asio.hpp>
+#include <string>
 #include "DS.h"
+
+using namespace std;
 
 DS_Manager::DS_Manager()
 {
-  bm = new DS_BufferManager();
   rm = new DS_RemoteManager();
-  bm->rm = rm;
-  rm->bm = bm;
+  bm = new DS_BufferManager(DS_BFRMGR_NUMPAGES, rm);
 }
 
 DS_Manager::~DS_Manager()
@@ -13,7 +26,7 @@ DS_Manager::~DS_Manager()
 
 }
 
-StatusCode DS_Manager::createFile(const char *fileName)
+StatusCode DS_Manager::createFile(char *fileName)
 {
   StatusCode sc;
   if (fileName == NULL) {
@@ -22,7 +35,7 @@ StatusCode DS_Manager::createFile(const char *fileName)
   }
   ofstream file(fileName, ios::out | ios::binary);
   if (file.is_open()) {
-    char hdr_buf = new char[DS_FILE_HDR_SIZE];
+    char *hdr_buf = new char[DS_FILE_HDR_SIZE];
     memset(hdr_buf, 0, DS_FILE_HDR_SIZE);
 
     DS_FileHeader *hdr = (DS_FileHeader*) hdr_buf;
@@ -41,7 +54,7 @@ StatusCode DS_Manager::createFile(const char *fileName)
   }
 }
 
-StatusCode DS_Manager::loadFile(const char *fileName,
+StatusCode DS_Manager::loadFile(char *fileName,
                                 DS_FileHandle &fileHandle)
 {
   StatusCode sc;
@@ -57,13 +70,16 @@ StatusCode DS_Manager::loadFile(const char *fileName,
     file.close();
     fileHandle.rm = rm;
     fileHandle.bm = bm;
-    fileHandle.unixfd = open(fileName, O_BINARY | O_RDWR);
+    fileHandle.unixfd = open(fileName, O_RDWR);
     sc = DS_SUCCESS;
   }
   else {
-    sc = rm->remoteLoadFile(fileName, fileHandle);
+    string headerContent;
+    sc = rm->getRemoteHeaderFile(fileName, headerContent);
+    fileHandle.isRemote = true;
+    fileHandle.hdr.firstFree = atoi(strdup(headerContent.c_str()));
   }
-  fileHandle.rm = rm;
-  fileHandle.bm = bm;
+  fileHandle.rm = this->rm;
+  fileHandle.bm = this->bm;
   return sc;
 }

@@ -32,7 +32,9 @@ void session(tcp::socket sock)
         break; // Connection closed cleanly by peer.
       else if (error)
         throw boost::system::system_error(error); // Some other error.
-
+      data[length] = 'A';
+      data[length+1] = '\0';
+      length++;
       boost::asio::write(sock, boost::asio::buffer(data, length));
     }
   }

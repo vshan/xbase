@@ -1,8 +1,25 @@
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <cstdlib>
+#include <thread>
+#include <utility>
+#include <stdlib.h>
+#include <fcntl.h>   /* For O_RDWR */
+#include <unistd.h>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>                                                                                                                                                
+#include <boost/asio.hpp>
+#include <string>
 #include "DS.h"
+
+using namespace std;
+
 
 DS_BufferManager::DS_BufferManager(int numPages, DS_RemoteManager *rem_mgr)
 {
   this->numPages = numPages;
+  pageSize = DS_PAGE_SIZE;
   bufTable = new DS_BufPageDesc[numPages];
   for (int i = 0; i < numPages; i++) {
     bufTable[i].pData = new char[pageSize];
@@ -14,9 +31,9 @@ DS_BufferManager::DS_BufferManager(int numPages, DS_RemoteManager *rem_mgr)
     bufTable[i].next = i+1;
   }
   rm = rem_mgr;
-  bufTable[0].prev = bufTable[numPages - 1].next = INVALID_SLOT;
+  bufTable[0].prev = bufTable[numPages - 1].next = DS_INVALID_SLOT;
   free = 0;
-  first = last = INVALID_SLOT;
+  first = last = DS_INVALID_SLOT;
 }
 
 DS_BufferManager::~DS_BufferManager()
@@ -63,8 +80,8 @@ StatusCode DS_BufferManager::getPage(char *ipAddr, char *port, char *fileName, i
 {
   StatusCode sc;
   int slot;
-  map<pair<pair<string, string>, pair<string,int>>, int>::iterator it;
-  pair<pair<string, string>, pair<string, int>> rp = make_pair(make_pair(string(ipAddr), string(port)), 
+  map<pair<pair<string, string>, pair<string,int> >, int>::iterator it;
+  pair<pair<string, string>, pair<string, int> > rp = make_pair(make_pair(string(ipAddr), string(port)), 
                                                                make_pair(string(fileName), pageNum));
   it = rem_slot_map.find(rp);
 
@@ -91,21 +108,22 @@ StatusCode DS_BufferManager::allocatePage(int fd, int pageNum, char **ppBuffer)
   StatusCode sc;
   int slot;
 
-  if((ec = internalAlloc(slot)))
-    return ec;
+  if((sc = internalAlloc(slot)))
+    return sc;
 
-  if((ec = readPage(fd, pageNum, bufTable[slot].pData)))
-    return ec;
+  if((sc = readPage(fd, pageNum, bufTable[slot].pData)))
+    return sc;
 
-  slot_map[make_pair(fd, pageNum)] = slot; // make a new entry in the hashMap
+  loc_slot_map[make_pair(fd, pageNum)] = slot; // make a new entry in the hashMap
   initPageDesc(fd, pageNum, slot); // initialize page description
   *ppBuffer = bufTable[slot].pData;
-  return (ec = 0);
+  return (sc = 0);
 }
 
 StatusCode DS_BufferManager::allocatePage(char *ipAddr, char *port, char *fileName, int pageNum, char **ppBuffer)
 {
-  rm->remoteAllocatePage(ipAddr, port, fileName, pageNum);
+  //rm->remoteAllocatePage(ipAddr, port, fileName, pageNum);
+  int slot;
   internalAlloc(slot);
   readPage(ipAddr, port, fileName, pageNum, bufTable[slot].pData); 
 }
@@ -120,11 +138,11 @@ StatusCode DS_BufferManager::markDirty(int fd, int pageNum)
   it = loc_slot_map.find(p);
   if (it != loc_slot_map.end()) {
     slot = it->second;
-    bufTable[slot].isDirty = TRUE;
+    bufTable[slot].isDirty = true;
     unlink(slot);
     linkHead(slot);
   }
-  return (ec = 0);
+  return (sc = 0);
 }
 
 StatusCode DS_BufferManager::markDirty(char *ipAddr, char *port, char *fileName, int pageNum)
@@ -133,17 +151,17 @@ StatusCode DS_BufferManager::markDirty(char *ipAddr, char *port, char *fileName,
   int slot;
 
   // pair<string, string> p = make_pair(string(ipAddr), string(port));
-  map<pair<pair<string, string>, pair<string,int>>, int>::iterator it;
-  pair<pair<string, string>, pair<string, int>> rp = make_pair(make_pair(string(ipAddr), string(port)), 
+  map<pair<pair<string, string>, pair<string,int> >, int>::iterator it;
+  pair<pair<string, string>, pair<string, int> > rp = make_pair(make_pair(string(ipAddr), string(port)), 
                                                  make_pair(string(fileName), pageNum));
   it = rem_slot_map.find(rp);
   if (it != rem_slot_map.end()) {
     slot = it->second;
-    bufTable[slot].isDirty = TRUE;
+    bufTable[slot].isDirty = true;
     unlink(slot);
     linkHead(slot);
   }
-  return (ec = 0);
+  return (sc = 0);
 }
 
 StatusCode DS_BufferManager::unpinPage(int fd, int pageNum)
@@ -167,7 +185,7 @@ StatusCode DS_BufferManager::unpinPage(int fd, int pageNum)
     }
   }
 
-  return (ec = 0);
+  return (sc = 0);
 }
 
 StatusCode DS_BufferManager::unpinPage(char *ipAddr, char *port, char *fileName, int pageNum)
@@ -175,8 +193,8 @@ StatusCode DS_BufferManager::unpinPage(char *ipAddr, char *port, char *fileName,
   StatusCode sc;
   int slot;
 
-  map<pair<pair<string, string>, pair<string,int>>, int>::iterator it;
-  pair<pair<string, string>, int> rp = make_pair(make_pair(string(ipAddr), string(port)), 
+  map<pair<pair<string, string>, pair<string,int> >, int>::iterator it;
+  pair<pair<string, string>, pair<string, int> > rp = make_pair(make_pair(string(ipAddr), string(port)), 
                                                  make_pair(string(fileName), pageNum));
   it = rem_slot_map.find(rp);
 
@@ -192,7 +210,7 @@ StatusCode DS_BufferManager::unpinPage(char *ipAddr, char *port, char *fileName,
     }
   }
 
-  return (ec = 0);
+  return (sc = 0);
 }
 
 StatusCode DS_BufferManager::forcePage(int fd, int pageNum)
@@ -207,12 +225,12 @@ StatusCode DS_BufferManager::forcePage(int fd, int pageNum)
   if (it != loc_slot_map.end()) {
     slot = it->second;
 
-    if (bufTable[slot].isDirty == TRUE) {
-      if((ec = writePage(fd, bufTable[slot].pageNum,
+    if (bufTable[slot].isDirty == true) {
+      if((sc = writePage(fd, bufTable[slot].pageNum,
         bufTable[slot].pData)))
           return sc;
 
-        bufTable[slot].isDirty = FALSE;
+        bufTable[slot].isDirty = false;
     }
   }
 
@@ -223,21 +241,21 @@ StatusCode DS_BufferManager::forcePage(char *ipAddr, char *port, char *fileName,
 {
   StatusCode sc;
   int slot;
-  map<pair<pair<string, string>, pair<string,int>>, int>::iterator it;
-  pair<pair<string, string>, int> rp = make_pair(make_pair(string(ipAddr), string(port)), 
-                                                 make_pair(string(fileName), pageNum));
+  map<pair<pair<string, string>, pair<string,int> >, int>::iterator it;
+  pair<pair<string, string>, pair<string, int> > rp = make_pair(make_pair(string(ipAddr), string(port)), 
+                                                             make_pair(string(fileName), pageNum));
   
   it = rem_slot_map.find(rp);
 
   if (it != rem_slot_map.end()) {
     slot = it->second;
 
-    if (bufTable[slot].isDirty == TRUE) {
+    if (bufTable[slot].isDirty == true) {
       if((sc = writePage(ipAddr, port, fileName, pageNum,
         bufTable[slot].pData)))
           return sc;
 
-        bufTable[slot].isDirty = FALSE;
+        bufTable[slot].isDirty = false;
     }
   }
 
@@ -257,16 +275,16 @@ StatusCode DS_BufferManager::linkHead(int slot)
 {
   // Set next and prev pointers of slot entry
   bufTable[slot].next = first;
-  bufTable[slot].prev = INVALID_SLOT;
+  bufTable[slot].prev = DS_INVALID_SLOT;
 
    // If list isn't empty, point old first back to slot
-  if (first != INVALID_SLOT)
+  if (first != DS_INVALID_SLOT)
     bufTable[first].prev = slot;
 
   first = slot; //make slot as the head now
 
    // if list was empty, set last to slot/first
-  if (last == INVALID_SLOT)
+  if (last == DS_INVALID_SLOT)
     last = first;
 
    // Return ok
@@ -289,15 +307,15 @@ StatusCode DS_BufferManager::unlink(int slot)
     last = bufTable[slot].prev;
 
    // If slot not at end of list, point next back to previous
-  if (bufTable[slot].next != INVALID_SLOT)
+  if (bufTable[slot].next != DS_INVALID_SLOT)
     bufTable[bufTable[slot].next].prev = bufTable[slot].prev;
 
    // If slot not at head of list, point prev forward to next
-  if (bufTable[slot].prev != INVALID_SLOT)
+  if (bufTable[slot].prev != DS_INVALID_SLOT)
     bufTable[bufTable[slot].prev].next = bufTable[slot].next;
 
    // Set next and prev pointers of slot entry
-  bufTable[slot].prev = bufTable[slot].next = INVALID_SLOT;
+  bufTable[slot].prev = bufTable[slot].next = DS_INVALID_SLOT;
 
    // Return ok
   return (0);
@@ -317,31 +335,31 @@ StatusCode DS_BufferManager::internalAlloc(int &slot)
   
   map<pair<int, int>, int>::iterator it;
   pair<int, int> p;
-  map<pair<pair<string, string>, pair<string,int>>, int>::iterator rit;
-  pair<pair<string, string>, pair<string, int>> rp;
+  map<pair<pair<string, string>, pair<string,int> >, int>::iterator rit;
+  pair<pair<string, string>, pair<string, int> > rp;
   
   // map<pair<pair<string, string>, int>, int>::iterator rit;
   // pair<pair<string, string>, int> rp;
 
    // If the free list is not empty, choose a slot from the free list
-  if (free != INVALID_SLOT) {
+  if (free != DS_INVALID_SLOT) {
     slot = free;
     free = bufTable[slot].next;
   }
   else
   {
     // Choose the least-recently used page that is unpinned, that is why we start from last
-    for (slot = last; slot != INVALID_SLOT; slot = bufTable[slot].prev)
+    for (slot = last; slot != DS_INVALID_SLOT; slot = bufTable[slot].prev)
     {
       if (bufTable[slot].pinCount == 0)
         break;
     }
     // return error if all pages are pinned
-    if(slot == INVALID_SLOT)
+    if(slot == DS_INVALID_SLOT)
       return DS_NOBUF;
 
         // write page to disk if it is dirty
-    if (bufTable[slot].isDirty == TRUE) {
+    if (bufTable[slot].isDirty == true) {
       if (bufTable[slot].isRemote)
         writePage(bufTable[slot].ipAddr, bufTable[slot].port,
           bufTable[slot].fileName, bufTable[slot].pageNum, bufTable[slot].pData);
@@ -349,13 +367,13 @@ StatusCode DS_BufferManager::internalAlloc(int &slot)
         writePage(bufTable[slot].fd, bufTable[slot].pageNum,
             bufTable[slot].pData);
 
-      bufTable[slot].isDirty = FALSE;
+      bufTable[slot].isDirty = false;
     }
 
-    if (isRemote) {
-      rp = make_pair(make_pair(string(ipAddr), string(port)), 
-                     make_pair(string(fileName), pageNum));
-      rit = rem_slot_map.find(p);
+    if (bufTable[slot].isRemote) {
+      rp = make_pair(make_pair(string(bufTable[slot].ipAddr), string(bufTable[slot].port)), 
+                     make_pair(string(bufTable[slot].fileName), bufTable[slot].pageNum));
+      rit = rem_slot_map.find(rp);
 
       if (rit != rem_slot_map.end()) {
         rem_slot_map.erase(rp);
@@ -383,20 +401,9 @@ StatusCode DS_BufferManager::writePage(int fd, int pageNum, char *source)
 {
   StatusCode sc;
 
-    // seek to the appropriate place (cast to long for PC's)
-  long offset = pageNum*pageSize + DS_FILE_HDR_SIZE;
+  sc = rm->setLocalPage(fd, pageNum, source);
 
-  if(lseek(fd, offset, L_SET) <0)
-    return DS_UNIX;
-
-    // write the data
-  int numBytes = write(fd, source, pageSize);
-  if(numBytes < 0)
-    return DS_UNIX;
-  if(numBytes!=pageSize)
-    return DS_INCOMPLETEWRITE;
-
-  return (sc = 0);
+  return (sc);
 }
 
 StatusCode DS_BufferManager::writePage(char *ipAddr, char *port, char *fileName, int pageNum, char *source)
@@ -413,18 +420,7 @@ StatusCode DS_BufferManager::writePage(char *ipAddr, char *port, char *fileName,
 StatusCode DS_BufferManager::readPage(int fd, int pageNum, char *dest)
 {
   StatusCode sc;
-  long offset = pageNum*pageSize + DS_FILE_HDR_SIZE;
-
-  if(lseek(fd, offset, L_SET) < 0)
-    return DS_UNIX;
-
-  // read the data
-  int numBytes = read(fd, source, pageSize);
-  if(numBytes < 0)
-    return DS_UNIX;
-  if(numBytes!=pageSize)
-    return DS_INCOMPLETEREAD;
-
+  sc = rm->getLocalPage(fd, pageNum, dest);
   return (sc = 0);
 }
 
@@ -439,9 +435,9 @@ StatusCode DS_BufferManager::initPageDesc(int fd, int pageNum, int slot)
 {
   bufTable[slot].fd       = fd;
   bufTable[slot].pageNum  = pageNum;
-  bufTable[slot].isDirty   = FALSE;
+  bufTable[slot].isDirty   = false;
   bufTable[slot].pinCount = 1;
-  bufTable[slot].isRemote = FALSE;
+  bufTable[slot].isRemote = false;
   return 0;
 }
 
@@ -452,8 +448,8 @@ StatusCode DS_BufferManager::initPageDesc(char *ipAddr, char *port, char *fileNa
   strcpy(bufTable[slot].fileName, fileName);
   
   bufTable[slot].pageNum  = pageNum;
-  bufTable[slot].isDirty   = FALSE;
+  bufTable[slot].isDirty   = false;
   bufTable[slot].pinCount = 1;
-  bufTable[slot].isRemote = TRUE;
+  bufTable[slot].isRemote = true;
   return 0;
 }

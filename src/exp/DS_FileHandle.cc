@@ -1,4 +1,19 @@
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <cstdlib>
+#include <thread>
+#include <utility>
+#include <stdlib.h>
+#include <fcntl.h>   /* For O_RDWR */
+#include <unistd.h>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>                                                                                                                                                
+#include <boost/asio.hpp>
+#include <string>
 #include "DS.h"
+
+using namespace std;
 
 DS_FileHandle::DS_FileHandle()
 {
@@ -45,8 +60,8 @@ StatusCode DS_FileHandle::allocatePage(DS_PageHandle &pageHandle)
     pageNum = hdr.firstFree;
 
     if (isRemote) {
-      bm->getPage(ipaddr.c_str(), port.c_str(),
-        fileName.c_str(), pageNum, &pPageBuf);
+      bm->getPage((char *)ipaddr.c_str(), (char *)port.c_str(),
+        (char *)fileName.c_str(), pageNum, &pPageBuf);
     }
     else {
       bm->getPage(unixfd, pageNum, &pPageBuf);
@@ -60,8 +75,8 @@ StatusCode DS_FileHandle::allocatePage(DS_PageHandle &pageHandle)
     pageNum = hdr.numPages;
 
     if (isRemote) {
-      bm->allocatePage(ipaddr.c_str(), port.c_str(),
-           fileName.c_str(), pageNum, &pPageBuf);
+      bm->allocatePage((char *)ipaddr.c_str(), (char *)port.c_str(),
+           (char *)fileName.c_str(), pageNum, &pPageBuf);
     }
     else {
       bm->allocatePage(unixfd, pageNum, &pPageBuf);
@@ -70,13 +85,13 @@ StatusCode DS_FileHandle::allocatePage(DS_PageHandle &pageHandle)
     hdr.numPages++;
   }
 
-  isHdrChanged = TRUE;
+  isHdrChanged = true;
   memset(pPageBuf, 0, DS_PAGE_SIZE);
 
   markDirty(pageNum);
 
-  pageHandle.pageNum = pageNum;
-  pageHandle.pPageData = pPageBuf;
+  pageHandle.pageNumber = pageNum;
+  pageHandle.pageData = pPageBuf;
 
   return 0;
 }
@@ -97,16 +112,16 @@ StatusCode DS_FileHandle::getPrevPage(int pageNum, DS_PageHandle &pageHandle)
 
 StatusCode DS_FileHandle::getThisPage(int pageNum, DS_PageHandle &pageHandle)
 {
-  char msg_con[DS_BUF_SIZE];
+  char *msg_con = new char[DS_BUF_SIZE];
   if (isRemote) {
-    bm->getPage(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum, msg_con);
+    bm->getPage((char *)ipaddr.c_str(), (char *)port.c_str(), (char *)fileName.c_str(), pageNum, &msg_con);
   }
   else {
-    bm->getPage(unixfd, pageNum, msg_con);
+    bm->getPage(unixfd, pageNum, &msg_con);
   }
 
-  pageHandle.pageNum = pageNum;
-  pageHandle.pPageData = msg_con;
+  pageHandle.pageNumber = pageNum;
+  pageHandle.pageData = msg_con;
 
   return DS_SUCCESS;
 }
@@ -114,7 +129,7 @@ StatusCode DS_FileHandle::getThisPage(int pageNum, DS_PageHandle &pageHandle)
 StatusCode DS_FileHandle::markDirty(int pageNum)
 {
   if (isRemote)
-    bm->markDirty(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum);
+    bm->markDirty((char *)ipaddr.c_str(), (char *)port.c_str(), (char *)fileName.c_str(), pageNum);
   else
     bm->markDirty(unixfd, pageNum);
 
@@ -124,7 +139,7 @@ StatusCode DS_FileHandle::markDirty(int pageNum)
 StatusCode DS_FileHandle::unpinPage(int pageNum)
 {
   if (isRemote)
-    bm->unpinPage(ipaddr.c_str(), port.c_str(), fileName.c_str(), pageNum);
+    bm->unpinPage((char *)ipaddr.c_str(), (char *)port.c_str(), (char *)fileName.c_str(), pageNum);
   else
     bm->unpinPage(unixfd, pageNum);
 
