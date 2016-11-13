@@ -23,9 +23,14 @@ int main()
   cout << "Starting server thread" << std::endl;
   std::thread(DS_RemoteManager::spawnServer, 7001, mgr.rm).detach();
   DS_FileHandle hdl;
-  mgr.loadFile("hodoriness", hdl);
+  //mgr.loadFile("hodoriness", hdl);
+  //DS_FileHandle hdl2;
+  //mgr.createRemoteFile("hoodi", "127.0.0.1", "7003");
+  mgr.loadFile("hoodi", hdl);
   cout << "curr: " << hdl.hdr.firstFree << std::endl;
   cout << "dirr: " << hdl.hdr.numPages << std::endl;
+  DS_PageHandle ph;
+  hdl.
   // cout << "Local processing started" << std::endl;
   // mgr.createFile("hodoriness");
   // //int *n = new int;
