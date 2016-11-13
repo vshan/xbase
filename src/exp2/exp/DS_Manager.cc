@@ -68,33 +68,18 @@ StatusCode DS_Manager::loadFile(char *fileName,
     ifstream file(fileName, ios::in | ios::binary);
     file.read((char *)&fileHandle.hdr, DS_FILE_HDR_SIZE);
     file.close();
-    fileHandle.fileName.copy(fileName, strlen(fileName));
     fileHandle.rm = rm;
     fileHandle.bm = bm;
     fileHandle.unixfd = open(fileName, O_RDWR);
     sc = DS_SUCCESS;
   }
   else {
-    char headerContent[DS_CHAR_BUF_SIZE], ipAddrStr[DS_CHAR_BUF_SIZE], portStr[DS_CHAR_BUF_SIZE];
-    sc = rm->getRemoteHeaderFile(fileName, headerContent, ipAddrStr, portStr);
+    string headerContent;
+    sc = rm->getRemoteHeaderFile(fileName, headerContent);
     fileHandle.isRemote = true;
-    memcpy((void *)&fileHandle.hdr, (void *)headerContent, DS_FILE_HDR_SIZE);
-    fileHandle.ipaddr.copy(ipAddrStr, strlen(ipAddrStr));
-    fileHandle.port.copy(portStr, strlen(portStr));
+    memcpy((void *)&fileHandle.hdr, (void *)headerContent.c_str(), DS_FILE_HDR_SIZE);
   }
-  fileHandle.fileName.copy(fileName, strlen(fileName));
   fileHandle.rm = this->rm;
   fileHandle.bm = this->bm;
-  return sc;
-}
-
-StatusCode DS_Manager::createRemoteFile(char *fileName, char *ipAddr, char *port)
-{
-  StatusCode sc;
-  if (fileName == NULL || ipAddr == NULL || port == NULL) {
-    sc = DS_NULL_PARAM;
-    return sc;
-  }
-  sc = rm->createRemoteFile(fileName, ipAddr, port);
   return sc;
 }

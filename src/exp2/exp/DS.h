@@ -19,12 +19,10 @@ using namespace std;
 #define DS_PROTO_LOAD_PAGE_CODE 50
 #define DS_PROTO_WRITE_PAGE 12 
 #define DS_PROTO_WRITE_PAGE_CODE 60
-#define DS_PROTO_CREAT_FILE 88
-#define DS_PROTO_CREAT_FILE_CODE 90
 #define DS_REMOTE_WRITE_ERROR 14
 #define DS_PROTO_ALLOC_PAGE 15
 #define DS_PROTO_ALLOC_PAGE_CODE 80
-#define DS_SUCC_REM_READ_CODE 17
+#define DS_SUCC_REM_READ_CODE 51
 #define DS_SUCC_REM_WRI_CODE 18
 #define DS_UNIX 20
 #define DS_INCOMPLETEREAD 21
@@ -75,8 +73,7 @@ public:
   ~DS_RemoteManager();
 
   StatusCode getRemoteHeaderFile(char *fileName,
-                                 char header_content[], char ipAddrStr[], char portStr[]);
-  StatusCode createRemoteFile(char *fileName, char *ipAddr, char *port);
+                                 string &header_content);
   StatusCode rawSendRecv(char *host, char *port, 
                          char request[], char reply[]);
   boost::asio::ip::tcp::socket* enableConnection(char *host, char *port);
@@ -183,7 +180,6 @@ public:
   DS_Manager();
   ~DS_Manager();
   StatusCode createFile(char *filename);
-  StatusCode createRemoteFile(char *fileName, char *ipAddr, char *port);
   StatusCode loadFile(char *filename, DS_FileHandle &fileHandle);
 // private:
   DS_BufferManager *bm;

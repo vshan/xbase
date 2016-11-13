@@ -33,8 +33,7 @@ void session(tcp::socket sock)
       else if (error)
         throw boost::system::system_error(error); // Some other error.
       data[length] = '\0';
-      char *sendila = "71|7003|hodoriness|127.0.0.1";
-      boost::asio::write(sock, boost::asio::buffer(sendila, strlen(sendila)));
+      boost::asio::write(sock, boost::asio::buffer(data, length));
     }
   }
   catch (std::exception& e)
