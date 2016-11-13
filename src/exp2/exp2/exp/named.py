@@ -18,8 +18,8 @@ def spawnServer():
     print('connection received')
     data=conn.recv(max_length);
     print(data)
-    res=handleReq(data.decode())
-    conn.send(res.encode())
+    res=handleReq(data)
+    conn.send(res)
     # conn.close
 
 def handleReq(req):
@@ -32,9 +32,7 @@ def handleReq(req):
   filename = strs[1]
   if (code == 70):
     tup = mydict[filename]
-    resultstr = str(71) + "|" + tup[1] + "|" + filename + "|" + tup[0]
-    print(resultstr)
-    return resultstr
+    return str(71) + "|" + tup[1] + "|" + filename + "|" + tup[0]
   if (code == 90):
     port = strs[2]
     ip = strs[3]
@@ -50,7 +48,7 @@ def retrieveQuery(query, vinayb_ip, port):
   data=clientSocket.recv(max_length)
   print(data)
   clientSocket.close
-  return data.decode()
+  return data
 
 if __name__== "__main__" :
   spawnServer()

@@ -288,7 +288,7 @@ StatusCode DS_RemoteManager::handleProtoReq(ProtocolParseObj &ppo, char repbuf[]
 
   if (ppo.code == 50) {
     // open file to get fd
-    fd = open(ppo.fileName, O_RDONLY);
+    fd = open(ppo.fileName, O_CREAT | O_RDONLY);
     getLocalPage(fd, ppo.pageNum, contents);
     makeProtoHelper(DS_SUCC_REM_READ_CODE, (void *)(&ppo.pageNum), ppo.fileName, repbuf);
     strcat(repbuf, "|");
@@ -368,7 +368,7 @@ StatusCode DS_RemoteManager::setLocalPage(int fd, int pageNum, char *source)
 
     // seek to the appropriate place (cast to long for PC's)
   int pageSize = DS_PAGE_SIZE;
-  long offset = pageNum*pageSize; //+ sizeof(DS_FileHeader);
+  long offset = pageNum*pageSize; // + sizeof(DS_FileHeader);
 
   if(lseek(fd, offset, L_SET) <0)
     return DS_UNIX;

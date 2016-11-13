@@ -11,13 +11,9 @@
 #include <boost/algorithm/string.hpp>                                                                                                                                                
 #include <boost/asio.hpp>
 #include <string>
-#include "DS.h"
 
 int main()
 {
-  StatusCode sc;
-  DS_Manager mgr;
-  cout << "Starting server thread" << std::endl;
-  mgr.rm->spawnServer(7003, mgr.rm);
-  return 0;
+  DS_RemoteManager rm;
+  rm->initializeServer();
 }
