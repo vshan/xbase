@@ -2,7 +2,15 @@ import socket
 import sys
 
 mydict = {}
-mydict['hodoriness'] = ("127.0.0.1", "7003")
+
+def loadDict():
+  content = []
+  with open("nameserverdict") as f:
+    content = f.readlines()
+    content = [x.strip('\n') for x in content]
+  for line in content:
+    strs = line.split(',')
+    mydict[strs[0]] = (strs[1], strs[2])
 
 def spawnServer():
   serverSocket = socket.socket()
@@ -39,6 +47,8 @@ def handleReq(req):
     port = strs[2]
     ip = strs[3]
     mydict[filename] = (ip, port)
+    with open("nameserverdict", "a") as myfile:
+      myfile.write(filename + "," + ip + "," + port + "\n")
     retrieveQuery("100|" + filename, ip, port)
     return str(91) + "|" + filename
 
@@ -53,4 +63,5 @@ def retrieveQuery(query, vinayb_ip, port):
   return data.decode()
 
 if __name__== "__main__" :
+  loadDict()
   spawnServer()

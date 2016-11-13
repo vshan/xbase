@@ -1,16 +1,16 @@
 using namespace std;
 
 #define DS_SUCCESS 0
-#define DS_SMALL_BUF_SIZE 1028
+#define DS_PAGE_SIZE 4096
+#define DS_SMALL_BUF_SIZE (DS_PAGE_SIZE / 2)
 #define DS_NOBUF 2
 #define DS_INVALIDPAGE (-1)
 #define DS_PAGE_LIST_END (-2)
-#define DS_PAGE_SIZE 4096
-#define DS_BUF_SIZE 4096
+#define DS_BUF_SIZE DS_PAGE_SIZE
 #define DS_NULL_PARAM 3
 #define DS_NO_OPEN_FILE 4
 #define DS_UNPINNED_PAGE 5
-#define DS_CHAR_BUF_SIZE 8192
+#define DS_CHAR_BUF_SIZE (DS_PAGE_SIZE * 2)
 #define DS_PROTO_NAME_REQ 6
 #define DS_PROTO_NAME_REQ_CODE 70
 #define DS_NAME_SERVER "127.0.0.1"
@@ -49,8 +49,8 @@ struct ProtocolParseObj
 {
   int code;
   int pageNum;
-  char fileName[4096];
-  char pageContents[4096];
+  char fileName[DS_BUF_SIZE];
+  char pageContents[DS_BUF_SIZE];
   char ipAddr[20];
   char port[10];
 };

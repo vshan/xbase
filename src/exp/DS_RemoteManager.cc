@@ -41,7 +41,9 @@ StatusCode DS_RemoteManager::getRemoteHeaderFile(char *fileName,
   //header_content = parse_obj->value;
   memset(recv_msg, 0, DS_CHAR_BUF_SIZE);
   strcpy(ipAddrStr, ppo.ipAddr);
+  ipAddrStr[strlen(ppo.ipAddr)] = '\0';
   strcpy(portStr, ppo.port);
+  portStr[strlen(ppo.port)] = '\0';
   getRemotePage(ppo.ipAddr, ppo.port, fileName, 0, recv_msg);
   return DS_SUCCESS;
 }

@@ -1,1 +1,0 @@
-g++ DS_BufferManager.cc DS_FileHandle.cc DS_PageHandle.cc DS_RemoteManager.cc DS_Manager.cc diststore.cc -o diststore -lboost_system -lboost_thread -lpthread -lboost_filesystem -std=c++11

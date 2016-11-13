@@ -79,11 +79,12 @@ StatusCode DS_Manager::loadFile(char *fileName,
     sc = rm->getRemoteHeaderFile(fileName, headerContent, ipAddrStr, portStr);
     fileHandle.isRemote = true;
     cout << "got : " << headerContent << std::endl;
+    cout << "got2 : " << ipAddrStr << std::endl << portStr << std::endl << strlen(ipAddrStr) << std::endl;
     memcpy((void *)&fileHandle.hdr, (void *)headerContent, DS_FILE_HDR_SIZE);
-    fileHandle.ipaddr.copy(ipAddrStr, strlen(ipAddrStr));
-    fileHandle.port.copy(portStr, strlen(portStr));
+    fileHandle.ipaddr = string(ipAddrStr);
+    fileHandle.port = string(portStr);
   }
-  fileHandle.fileName.copy(fileName, strlen(fileName));
+  fileHandle.fileName = string(fileName);
   fileHandle.rm = this->rm;
   fileHandle.bm = this->bm;
   return sc;
