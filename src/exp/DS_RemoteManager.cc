@@ -94,8 +94,8 @@ StatusCode DS_RemoteManager::getRemotePage(char *host, char *port, char *fileNam
   memset(reply_msg, 0, DS_CHAR_BUF_SIZE*10);
   makeProtocolMsg(DS_PROTO_LOAD_PAGE, (void *)&pageNum, (void *)fileName, NULL, proto_msg);
   rawSendRecv(host, port, proto_msg, reply_msg);
-  cout << "thoda : " << reply_msg << std::endl;
-  cout << "size thoda : " << strlen(reply_msg) << std::endl;
+  // cout << "thoda : " << reply_msg << std::endl;
+  // cout << "size thoda : " << strlen(reply_msg) << std::endl;
   ProtocolParseObj ppo;
   parseProtocolMsg(reply_msg, ppo);
   memcpy((void *)page_content, (void *)ppo.pageContents, strlen(ppo.pageContents));

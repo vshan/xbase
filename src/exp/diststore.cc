@@ -25,7 +25,8 @@ int main()
   DS_FileHandle hdl;
   // mgr.loadFile("hodoriness", hdl);
   //DS_FileHandle hdl2;
-  mgr.createRemoteFile("dapandudidal", "127.0.0.1", "7003");
+  // mgr.createRemoteFile("iuiu", "127.0.0.1", "7003");
+  // mgr.createRemoteFile("file2", "32.43.4.34", "7009");
   // mgr.loadFile("DS_RemoteManager.cc", hdl);
   // cout << "curr: " << hdl.hdr.firstFree << std::endl;
   // cout << "dirr: " << hdl.hdr.numPages << std::endl;

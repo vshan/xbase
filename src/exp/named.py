@@ -34,7 +34,7 @@ def handleReq(req):
   # 70|FileName
   # 71|Port|FileName|IP
   # 90|FileName|Port|IP
-  # 91|FileName
+  # 100|FileName
   strs = req.split('|')
   code = int(strs[0])
   filename = strs[1]
